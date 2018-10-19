@@ -7,6 +7,7 @@ Welcome to the Muuktest Executer
 Prerequisites
 -------------
 - Python 3 installed
+- sudo pip install requests
 
 How to use
 -----------------
