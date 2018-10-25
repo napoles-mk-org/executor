@@ -37,6 +37,9 @@ dependencies {
     // Drivers
     testCompile "org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion"
     testCompile "org.seleniumhq.selenium:selenium-firefox-driver:$seleniumVersion"
+
+    compile group: 'org.seleniumhq.selenium', name: 'selenium-support', version: '3.14.0'
+
 }
 
 webdriverBinaries {
