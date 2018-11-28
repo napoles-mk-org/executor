@@ -17,14 +17,23 @@ def run(args):
   if field == "hashtag":
     value = "#"+value
 
-  # print (value)
-  # print (noexec)
   valueArr = []
   valueArr.append(value)
   valueArr.append("")
-  # print(valueArr)
 
-  # print(field,value)
+  # Getting the bearer token
+  path = 'key.pub'
+  token=''
+  try:
+    key_file = open(path,'r')
+    key = key_file.read()
+    r = requests.post("http://localhost:8081/generate_token_executer", data={'key': key})
+    responseObject = json.loads(r.content)
+    token = responseObject["access_token"]
+  except:
+    print("Key file was not found on the repository (Download it from the Muuktest portal)")
+ 
+  auth = {'Authorization': 'Bearer ' + token}
 
   allowed_fields = ['tag','name', 'hashtag']
   if field in allowed_fields:
@@ -36,13 +45,16 @@ def run(args):
       os.makedirs(route)
 
     values = {'property': field, 'value': valueArr}
-    #print (values)
     # This route downloads the scripts by the property.
     url = 'http://localhost:8081/download_byproperty/'
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
-    response = request.urlopen(url,data)
+    auth_request = request.Request(url,headers=auth, data=data)
+    auth_request.add_header('Authorization', 'Bearer '+token)
+    response = request.urlopen(auth_request)
+
+    # response = request.urlopen(url,data)
     file = response.read()
     fileobj = open('test.zip',"wb")
     fileobj.write(file)
