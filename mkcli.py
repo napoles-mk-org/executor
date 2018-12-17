@@ -14,6 +14,7 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   dirname = os.path.dirname(__file__)
+  userId = ''
   if field == "hashtag":
     value = "#"+value
 
@@ -29,9 +30,11 @@ def run(args):
     key = key_file.read()
     r = requests.post("http://localhost:8081/generate_token_executer", data={'key': key})
     responseObject = json.loads(r.content)
-    token = responseObject["access_token"]
+    token = responseObject["token"]
+    userId = responseObject["userId"]
   except:
     print("Key file was not found on the repository (Download it from the Muuktest portal)")
+    exit()
  
   auth = {'Authorization': 'Bearer ' + token}
 
@@ -44,7 +47,7 @@ def run(args):
     if not os.path.exists(route):
       os.makedirs(route)
 
-    values = {'property': field, 'value': valueArr}
+    values = {'property': field, 'value': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
     url = 'http://localhost:8081/download_byproperty/'
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
