@@ -70,6 +70,7 @@ def run(args):
     # Unzip the file // the library needs the file to end in .rar for some reason
     shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
+    os.system('chmod 544 ' + dirname + '/gradlew')
     if noexec == False :
       #Execute the test
       os.system(dirname + '/gradlew clean test')
