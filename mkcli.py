@@ -13,7 +13,11 @@ def run(args):
   value = args.value
   noexec = args.noexec
   route = 'src/test/groovy'
+
   dirname = os.path.dirname(__file__)
+  if dirname == "":
+    dirname = "."
+
   userId = ''
   if field == "hashtag":
     value = "#"+value
@@ -23,7 +27,7 @@ def run(args):
   valueArr.append("")
 
   # Getting the bearer token
-  path = 'key.pub'
+  path = dirname + '/key.pub'
   token=''
   try:
     key_file = open(path,'r')
