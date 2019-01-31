@@ -32,7 +32,7 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post("http://localhost:8081/generate_token_executer", data={'key': key})
+    r = requests.post("http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/generate_token_executer", data={'key': key})
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
@@ -53,7 +53,7 @@ def run(args):
 
     values = {'property': field, 'value': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
-    url = 'http://localhost:8081/download_byproperty/'
+    url = 'http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/download_byproperty/'
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
