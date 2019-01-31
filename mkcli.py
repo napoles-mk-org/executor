@@ -9,6 +9,7 @@ import urllib
 
 def run(args):
   #Gets the value from the flags
+  print("Starting process")
   field = args.field
   value = args.value
   noexec = args.noexec
@@ -44,6 +45,7 @@ def run(args):
 
   allowed_fields = ['tag','name', 'hashtag']
   if field in allowed_fields:
+    print("Downloading test")
     # #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
@@ -73,6 +75,7 @@ def run(args):
         flag = True
 
     if (flag == True):
+        print("The test has been downloaded successfully")
         fileobj = open('test.zip',"wb")
         fileobj.write(file)
         fileobj.close()
@@ -83,6 +86,7 @@ def run(args):
         os.system('chmod 544 ' + dirname + '/gradlew')
         if noexec == False :
           #Execute the test
+          print("Executing test...")
           os.system(dirname + '/gradlew clean test')
 
   else:
