@@ -33,13 +33,15 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post("http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/generate_token_executer", data={'key': key})
+    # r = requests.post("http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/generate_token_executer", data={'key': key})
+    r = requests.post("http://localhost:8081/generate_token_executer", data={'key': key})
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
+    organizationId = responseObject["organizationId"]
   except:
     print("Key file was not found on the repository (Download it from the Muuktest portal)")
-    exit()
+    # exit()
 
   auth = {'Authorization': 'Bearer ' + token}
 
@@ -55,7 +57,8 @@ def run(args):
 
     values = {'property': field, 'value': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
-    url = 'http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/download_byproperty/'
+    # url = 'http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/download_byproperty/'
+    url = 'http://localhost:8081/download_byproperty/'
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
@@ -84,10 +87,28 @@ def run(args):
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
         os.system('chmod 544 ' + dirname + '/gradlew')
+        
+        # save the dowonloaded test entry to the database
+        payload = {
+          "action": 2, 
+          "userId": userId, 
+          "organizationId": organizationId,
+          "options": {
+            "executor": True
+          }
+        }
+        requests.post("http://localhost:8082/tracking_data", json=payload)
+
         if noexec == False :
           #Execute the test
           print("Executing test...")
           os.system(dirname + '/gradlew clean test')
+           # save the execute test entry to the database
+          requests.post("http://localhost:8082/tracking_data", data={
+            'action': 3, 
+            'userId': userId, 
+            'organizationId': organizationId
+          })
 
   else:
     print(field+': is not an allowed property')
