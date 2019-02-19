@@ -15,17 +15,19 @@ def checkRequirements():
     requests_installed = False
     isUbuntu = False;
 
+    platform = sys.platform
     os_version = os.uname().version
-    if "Ubuntu" in os_version:
-        isUbuntu = True;
+
+    if platform == "linux":
+        if "Ubuntu" in os_version:
+            isUbuntu = True;
 
     linkJava = 'https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html';
 
     # Verifying if java is installed
     try:
-        java_version = subprocess.check_output('javac -version | awk -F \' \' \'{print $2}\'', shell=True).decode('utf-8')
-
-        match = re.findall('(((10|11)|1\\.8|1\\.9)([\\.+\\d+\\.*])*)', java_version.splitlines()[0])
+        java_version = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT).decode('utf-8')
+        match = re.findall('(((10|11)|1\\.8|1\\.9)([\\.+\\d+\\.*])*)', java_version.split('"')[1])
         if not match:
             if isUbuntu == True:
                 while 1:
@@ -35,9 +37,9 @@ def checkRequirements():
                             os.system('sudo add-apt-repository ppa:webupd8team/java')
                             os.system('sudo apt update; sudo apt install oracle-java8-set-default');
                             out = os.system('java -version');
-                            javac_version = subprocess.check_output(['javac', '-version'], stderr=subprocess.STDOUT)
+                            javac_version = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
 
-                            if "javac 1.8" in javac_version:
+                            if "1.8" in javac_version:
                                 java_installed = True
                             else:
                                 print("We couldn't to update Java")
@@ -120,10 +122,6 @@ def checkRequirements():
 def run(args):
     #Gets the value from the flags
     print("Starting process")
-    # sqlv = subprocess.check_output(['mysql', '--version'], stderr=subprocess.STDOUT)
-    # print(sqlv);
-
-    # out = subprocess.check_output(['sudo', 'apt-get' , 'update'], stderr=subprocess.STDOUT)
     requirements = checkRequirements()
 
     if requirements == True:
