@@ -6,6 +6,38 @@ from urllib import request
 import requests
 import json
 import urllib
+import xml.etree.ElementTree
+
+def sendFeedback():
+  path = 'build/test-results/chromeTest'
+  testSuccess = True
+  error = ''
+  feedbackData = []
+  for filename in os.listdir(path):
+    if filename.endswith('.xml'): 
+      e = xml.etree.ElementTree.parse('build/test-results/chromeTest/' + filename).getroot()
+
+      if e.attrib['failures'] != "0" :
+        testSuccess = False
+
+      if testSuccess == False :
+        if e.find('testcase') is not None :
+          if e.find('testcase').find('failure') is not None : 
+            error = e.find('testcase').find('failure').attrib['message']
+
+      testResult = {
+        "className": e.attrib['name'] if e.attrib['name'] is not None else "",
+        "success": testSuccess,
+        "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
+        "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
+        "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "", 
+        "error":  error,
+        "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
+      }
+      feedbackData.append(testResult)
+
+  print(feedbackData)
+
 
 def run(args):
   #Gets the value from the flags
@@ -31,7 +63,6 @@ def run(args):
 
   valueArr = []
   valueArr.append(value)
-  valueArr.append("")
 
   # Getting the bearer token
   path = dirname + '/key.pub'
@@ -60,7 +91,7 @@ def run(args):
     if not os.path.exists(route):
       os.makedirs(route)
 
-    values = {'property': field, 'value': valueArr, 'userId': userId}
+    values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
@@ -101,18 +132,19 @@ def run(args):
             "executor": True
           }
         }
-        requests.post(supportRoute+"tracking_data", json=payload)
+        # requests.post(supportRoute+"tracking_data", json=payload)
 
         if noexec == False :
           #Execute the test
           print("Executing test...")
           os.system(dirname + '/gradlew clean test')
-           # save the execute test entry to the database
-          requests.post(supportRoute+"tracking_data", data={
-            'action': 3, 
-            'userId': userId, 
-            'organizationId': organizationId
-          })
+          sendFeedback()
+           # save the executed test entry to the database
+          # requests.post(supportRoute+"tracking_data", data={
+          #   'action': 3, 
+          #   'userId': userId, 
+          #   'organizationId': organizationId
+          # })
 
   else:
     print(field+': is not an allowed property')
@@ -131,3 +163,5 @@ def main():
 
 if __name__=="__main__":
 	main()
+
+
