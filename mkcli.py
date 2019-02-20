@@ -16,9 +16,9 @@ def checkRequirements():
     isUbuntu = False;
 
     platform = sys.platform
-    os_version = os.uname().version
 
     if platform == "linux":
+        os_version = os.uname().version
         if "Ubuntu" in os_version:
             isUbuntu = True;
 
