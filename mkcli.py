@@ -8,7 +8,7 @@ import json
 import urllib
 import xml.etree.ElementTree
 
-def sendFeedback():
+def gatherFeedbackData():
   path = 'build/test-results/chromeTest'
   testSuccess = True
   error = ''
@@ -36,7 +36,7 @@ def sendFeedback():
       }
       feedbackData.append(testResult)
 
-  print(feedbackData)
+  return(feedbackData)
 
 
 def run(args):
@@ -138,13 +138,25 @@ def run(args):
           #Execute the test
           print("Executing test...")
           os.system(dirname + '/gradlew clean test')
-          sendFeedback()
+          testsExecuted = gatherFeedbackData()
+          print(testsExecuted)
+          url = muuktestRoute+'feedback/'
+          values = {'tests[]': testsExecuted, 'userId': userId}
+          data = urllib.parse.urlencode(values).encode('ascii')
+
+          auth_request = request.Request(url,headers=auth, data=data)
+          auth_request.add_header('Authorization', 'Bearer '+token)
+          response = request.urlopen(auth_request)
+          # print(response.read())
+
            # save the executed test entry to the database
           # requests.post(supportRoute+"tracking_data", data={
           #   'action': 3, 
           #   'userId': userId, 
           #   'organizationId': organizationId
           # })
+
+         
 
   else:
     print(field+': is not an allowed property')
