@@ -132,29 +132,24 @@ def run(args):
             "executor": True
           }
         }
-        # requests.post(supportRoute+"tracking_data", json=payload)
+        requests.post(supportRoute+"tracking_data", json=payload)
 
         if noexec == False :
           #Execute the test
           print("Executing test...")
           os.system(dirname + '/gradlew clean test')
           testsExecuted = gatherFeedbackData()
-          print(testsExecuted)
           url = muuktestRoute+'feedback/'
-          values = {'tests[]': testsExecuted, 'userId': userId}
-          data = urllib.parse.urlencode(values).encode('ascii')
-
-          auth_request = request.Request(url,headers=auth, data=data)
-          auth_request.add_header('Authorization', 'Bearer '+token)
-          response = request.urlopen(auth_request)
-          # print(response.read())
+          values = {'tests': testsExecuted, 'userId': userId}
+          hed = {'Authorization': 'Bearer ' + token}
+          requests.post(url, json=values, headers=hed)
 
            # save the executed test entry to the database
-          # requests.post(supportRoute+"tracking_data", data={
-          #   'action': 3, 
-          #   'userId': userId, 
-          #   'organizationId': organizationId
-          # })
+          requests.post(supportRoute+"tracking_data", data={
+            'action': 3, 
+            'userId': userId, 
+            'organizationId': organizationId
+          })
 
          
 
