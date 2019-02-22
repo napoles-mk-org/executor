@@ -8,117 +8,6 @@ import urllib
 import sys
 import re
 
-def checkRequirements():
-
-    java_installed = False
-    pip_installed = False
-    requests_installed = False
-    isUbuntu = False;
-
-    platform = sys.platform
-
-    if platform == "linux":
-        os_version = os.uname().version
-        if "Ubuntu" in os_version:
-            isUbuntu = True;
-
-    linkJava = 'https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html';
-
-    # Verifying if java is installed
-    try:
-        java_version = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT).decode('utf-8')
-        match = re.findall('(((10|11)|1\\.8|1\\.9)([\\.+\\d+\\.*])*)', java_version.split('"')[1])
-        if not match:
-            if isUbuntu == True:
-                while 1:
-                    answer = input("Java 1.8 or newer. Do you want to update it? [Y/N]: ");
-                    if ( answer == 'Y' or answer == 'N' or answer == 'y' or answer == 'n'):
-                        if (answer == 'Y' or answer == 'y') :
-                            os.system('sudo add-apt-repository ppa:webupd8team/java')
-                            os.system('sudo apt update; sudo apt install oracle-java8-set-default');
-                            out = os.system('java -version');
-                            javac_version = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
-
-                            if "1.8" in javac_version:
-                                java_installed = True
-                            else:
-                                print("We couldn't to update Java")
-                        break
-            else:
-                print("Is empty")
-        else:
-            java_installed = True
-
-    except Exception as e:
-        if isUbuntu == True:
-            while 1:
-                answer = input("Java is not installed. Do you want to install it? [Y/N]: ");
-                if ( answer == 'Y' or answer == 'N' or answer == 'y' or answer == 'n'):
-                    if (answer == 'Y' or answer == 'y') :
-                        os.system('sudo add-apt-repository ppa:webupd8team/java')
-                        os.system('sudo apt update; sudo apt install oracle-java8-installer');
-                        out = os.system('java -version');
-                        if out == 0:
-                            java_installed = True
-                        else:
-                            print("We couldn't to install Java")
-                    break
-        else:
-            print("Java is not installed. Java can be downloaded in the next link:")
-            print(linkJava)
-
-    linkPip3 = "https://pip.pypa.io/en/stable/installing/"
-    # Verifying if pip3 is installed
-    try:
-        pip_version = subprocess.check_output(['pip3', '--version'], stderr=subprocess.STDOUT)
-        pip_installed = True
-    except:
-        if isUbuntu == True:
-            while 1:
-                answer =  input("Pip3 is not installed. Do you want to install it? [Y/N]: ")
-                if ( answer == 'Y' or answer == 'N' or answer == 'y' or answer == 'n'):
-                    if (answer == 'Y' or answer == 'y') :
-                        os.system('sudo apt install python3-pip')
-                        out = os.system('pip3 --version')
-                        if out == 0:
-                            pip_installed = True
-                        else:
-                            print("We couldn't to install Pip3")
-                    break
-        else:
-            print("Pip3 is not installed. Pip3 can be downloaded in the next link:")
-            print(linkPip3)
-
-
-    linkRequests = "https://docs.python.org/3/installing/index.html"
-    #Verify if the request module is installed
-    if pip_installed:
-        import pip
-        reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
-        installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
-        if 'requests' in installed_packages:
-            requests_installed = True
-        else:
-            if isUbuntu == True:
-                while 1:
-                    answer =  input("Pip3 is not installed. Do you want to install it? [Y/N]: ")
-                    if ( answer == 'Y' or answer == 'N' or answer == 'y' or answer == 'n'):
-                        if (answer == 'Y' or answer == 'y') :
-                            os.system('sudo pip install requests')
-                            out = os.system('pip3 --version')
-                            if out == 0:
-                                requests_installed = True
-                            else:
-                                print("We couldn't to install Pip3")
-                        break
-            else:
-                print("Request Package is not installed. To know how to download it, go to the next link:")
-                print(linkRequests)
-
-
-    return java_installed and pip_installed and requests_installed
-
-
 def run(args):
     #Gets the value from the flags
     print("Starting process")
@@ -245,6 +134,145 @@ def run(args):
         print("There are not all the requirements to run the executor")
         exit()
 
+
+# This function install or update the programs or pymodules
+# The parameter element is the json with the info of the program or pymodules
+# The parameter action is to determinate if we need to install or update
+def installAndUpdate(element, action):
+    success = False
+    #We need to know if the os is Ubuntu
+    if sys.platform == "linux":
+        os_version = os.uname().version
+        if "Ubuntu" in os_version:
+            isUbuntu = True;
+
+    name = element["name"]
+
+    #We need to check if is program or pymodule
+    if element["type"] == "program":
+        # We need to check the action to determinate which cmd to use
+        if action == "update":
+            cmd = element["update_cmd"]
+            question = "You have a older " + name + "version. Do you want to update it? [Y/N]: "
+        else:
+            cmd = element["install_cmd"]
+            question = name + " is not installed. Do you want to install it? [Y/N]: "
+    else:
+        cmd = "sudo pip install " + name
+        question = name + " is not installed. Do you want to install it? [Y/N]: "
+
+
+    if isUbuntu:
+        while 1:
+            answer = input(question)
+            # Asking to the user if he wants to install or update it
+            if ( answer == 'Y' or answer == 'N' or answer == 'y' or answer == 'n'):
+                if (answer == 'Y' or answer == 'y') :
+                    # Installing or updating
+                    os.system(cmd)
+                    if action == "update":
+                        split_cmd = element["version_cmd"].split(" ")
+                        v = subprocess.check_output(split_cmd, stderr=subprocess.STDOUT).decode('utf-8')
+
+                        if element["minimum_version"] in v:
+                            success = True
+
+                    else:
+                        out = os.system(element[version_cmd])
+                        if out == 0:
+                            success = True
+
+                break
+
+    else:
+        # If the OS is not Ubuntu, we send the link with the info to download it
+        print(name + " is not installed. It can be downloaded in the next link:")
+        if x["type"] == "pymodule":
+            print("https://docs.python.org/3/installing/index.html")
+        else:
+            print(element["link"])
+
+    return success
+
+# Check if the programs or modules need to install or update
+# This function recieve a list of programs or pymodules to install
+def checkAndInstall(list):
+    pip3_installed = False
+    result = True
+
+    for x in list:
+        if x["type"] == "pymodule" and pip3_installed:
+            # Checking if the module is installed
+            import pip
+            # Retrieving if the mpython modules installed list
+            reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
+            installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
+
+            # Check if the module is in the list
+            if x["name"] in installed_packages:
+                installed = True
+            else:
+                installed = False
+
+        else:
+            try:
+                splitcmd = x["version_cmd"].split(" ")
+                # Getting the output of the command
+                version = subprocess.check_output(splitcmd, stderr=subprocess.STDOUT).decode('utf-8')
+                installed = True
+            except Exception as e:
+                # If it catch an exception the program doesn't exist
+                installed = False
+
+        if installed:
+            if "minimum_version" in x:
+                # If the programs is installed, we need to check his version
+                match = re.findall(x["regex"], version.split('"')[1])
+                if not match:
+                    # If it doesn't find a match, we need to update it
+                    installed = installAndUpdate(x, "update")
+            else:
+                if "Pip3" == x["name"]:
+                    pip3_installed = True
+        else:
+            # If it isn't installed, we need to install
+            installed = installAndUpdate(x, "install")
+
+        result &= installed
+
+    return result
+
+
+def checkRequirements():
+    # Array of jsons, this contains the info of the programs or pymodules to install
+    programs = [
+        {
+            "name": "Java",
+            "version_cmd": "java -version",
+            "install_cmd": "sudo add-apt-repository ppa:webupd8team/java; sudo apt update; sudo apt install oracle-java8-installer",
+            "update_cmd": "sudo add-apt-repository ppa:webupd8team/java; sudo apt update; sudo apt install oracle-java8-set-default",
+            "link": "https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html",
+            "minimum_version": "1.8",
+            "regex": "(((10|11)|1\\.8|1\\.9)([\\.+\\d+\\.*])*)",
+            "type": "program"
+        },
+        {
+            "name": "Pip3",
+            "version_cmd": "pip3 --version",
+            "install_cmd": "sudo apt install python3-pip",
+            "link": "https://pip.pypa.io/en/stable/installing/",
+            "type":"program"
+        },
+        {
+            "name": "requests",
+            "type": "pymodule"
+        }
+    ]
+
+    # Check if the programs are install
+    check_reqs = checkAndInstall(programs)
+
+    return check_reqs
 
 def main():
     parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
