@@ -221,7 +221,6 @@ def installAndUpdate(element, action):
 def checkAndInstall(list):
   pip3_installed = False
   result = True
-
   for x in list:
     if x["type"] == "pymodule" and pip3_installed:
       installed = checkPyModule(x)
@@ -243,8 +242,11 @@ def checkAndInstall(list):
           # If it doesn't find a match, we need to update it
           installed = installAndUpdate(x, "update")
     else:
-      # If it isn't installed, we need to install
-      installed = installAndUpdate(x, "install")
+      if x["type"] == "program" or pip3_installed:
+        # If it isn't installed, we need to install
+        installed = installAndUpdate(x, "install")
+      else:
+        print('The python3 module "' + x["name"] + '" needs to have Pip3 installed.')
 
     if "Pip3" == x["name"] and installed:
       pip3_installed = True
