@@ -242,12 +242,12 @@ def checkAndInstall(list):
         if not match:
           # If it doesn't find a match, we need to update it
           installed = installAndUpdate(x, "update")
-      else:
-        if "Pip3" == x["name"]:
-          pip3_installed = True
     else:
       # If it isn't installed, we need to install
       installed = installAndUpdate(x, "install")
+
+    if "Pip3" == x["name"] and installed:
+      pip3_installed = True
 
     result &= installed
 
