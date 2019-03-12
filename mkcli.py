@@ -132,7 +132,12 @@ def run(args):
             "executor": True
           }
         }
-        requests.post(supportRoute+"tracking_data", json=payload)
+
+        try:
+          requests.post(supportRoute+"tracking_data", json=payload)
+        except Exception as e:
+          print("Not connection to support Data Base");
+
 
         if noexec == False :
           #Execute the test
@@ -144,14 +149,15 @@ def run(args):
           hed = {'Authorization': 'Bearer ' + token}
           requests.post(url, json=values, headers=hed)
 
-           # save the executed test entry to the database
-          requests.post(supportRoute+"tracking_data", data={
-            'action': 3, 
-            'userId': userId, 
-            'organizationId': organizationId
-          })
-
-         
+          try:
+            # save the executed test entry to the database
+            requests.post(supportRoute+"tracking_data", data={
+              'action': 3,
+              'userId': userId,
+              'organizationId': organizationId
+            })
+          except Exception as e:
+              print("Not connection to support Data Base")
 
   else:
     print(field+': is not an allowed property')
