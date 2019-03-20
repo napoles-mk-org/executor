@@ -14,7 +14,7 @@ def gatherFeedbackData():
   error = ''
   feedbackData = []
   for filename in os.listdir(path):
-    if filename.endswith('.xml'): 
+    if filename.endswith('.xml'):
       e = xml.etree.ElementTree.parse('build/test-results/chromeTest/' + filename).getroot()
 
       if e.attrib['failures'] != "0" :
@@ -22,7 +22,7 @@ def gatherFeedbackData():
 
       if testSuccess == False :
         if e.find('testcase') is not None :
-          if e.find('testcase').find('failure') is not None : 
+          if e.find('testcase').find('failure') is not None :
             error = e.find('testcase').find('failure').attrib['message']
 
       testResult = {
@@ -30,7 +30,7 @@ def gatherFeedbackData():
         "success": testSuccess,
         "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
         "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
-        "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "", 
+        "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
         "error":  error,
         "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
       }
@@ -46,11 +46,11 @@ def run(args):
   value = args.value
   noexec = args.noexec
   route = 'src/test/groovy'
-  # muuktestRoute = 'http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/'
-  # supportRoute = 'http://ec2-18-219-8-121.us-east-2.compute.amazonaws.com:8082/'
+  muuktestRoute = 'http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/'
+  supportRoute = 'http://ec2-18-219-8-121.us-east-2.compute.amazonaws.com:8082/'
 
-  muuktestRoute = 'http://localhost:8081/'
-  supportRoute = 'http://localhost:8082/'
+  # muuktestRoute = 'http://localhost:8081/'
+  # supportRoute = 'http://localhost:8082/'
 
 
   dirname = os.path.dirname(__file__)
@@ -122,17 +122,22 @@ def run(args):
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
         os.system('chmod 544 ' + dirname + '/gradlew')
-        
+
         # save the dowonloaded test entry to the database
         payload = {
-          "action": 2, 
-          "userId": userId, 
+          "action": 2,
+          "userId": userId,
           "organizationId": organizationId,
           "options": {
             "executor": True
           }
         }
-        requests.post(supportRoute+"tracking_data", json=payload)
+
+        try:
+          requests.post(supportRoute+"tracking_data", json=payload)
+        except Exception as e:
+          print("Not connection to support Data Base");
+
 
         if noexec == False :
           #Execute the test
@@ -144,14 +149,15 @@ def run(args):
           hed = {'Authorization': 'Bearer ' + token}
           requests.post(url, json=values, headers=hed)
 
-           # save the executed test entry to the database
-          requests.post(supportRoute+"tracking_data", data={
-            'action': 3, 
-            'userId': userId, 
-            'organizationId': organizationId
-          })
-
-         
+          try:
+            # save the executed test entry to the database
+            requests.post(supportRoute+"tracking_data", data={
+              'action': 3,
+              'userId': userId,
+              'organizationId': organizationId
+            })
+          except Exception as e:
+              print("Not connection to support Data Base")
 
   else:
     print(field+': is not an allowed property')
@@ -170,5 +176,3 @@ def main():
 
 if __name__=="__main__":
 	main()
-
-
