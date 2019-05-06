@@ -6,6 +6,40 @@ from urllib import request
 import requests
 import json
 import urllib
+import xml.etree.ElementTree
+#import ssl
+
+def gatherFeedbackData():
+  path = 'build/test-results/chromeTest'
+
+  feedbackData = []
+  for filename in os.listdir(path):
+    testSuccess = True
+    error = ''
+    if filename.endswith('.xml'):
+      e = xml.etree.ElementTree.parse('build/test-results/chromeTest/' + filename).getroot()
+
+      if e.attrib['failures'] != "0" :
+        testSuccess = False
+
+      if testSuccess == False :
+        if e.find('testcase') is not None :
+          if e.find('testcase').find('failure') is not None :
+            error = e.find('testcase').find('failure').attrib['message']
+
+      testResult = {
+        "className": e.attrib['name'] if e.attrib['name'] is not None else "",
+        "success": testSuccess,
+        "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
+        "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
+        "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
+        "error":  error,
+        "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
+      }
+      feedbackData.append(testResult)
+
+  return(feedbackData)
+
 
 def run(args):
   #Gets the value from the flags
@@ -14,6 +48,12 @@ def run(args):
   value = args.value
   noexec = args.noexec
   route = 'src/test/groovy'
+  muuktestRoute = 'https://portal.muuktest.com:8081/'
+  supportRoute = 'https://testing.muuktest.com:8082/'
+
+  # muuktestRoute = 'http://localhost:8081/'
+  # supportRoute = 'http://localhost:8082/'
+
 
   dirname = os.path.dirname(__file__)
   if dirname == "":
@@ -25,7 +65,6 @@ def run(args):
 
   valueArr = []
   valueArr.append(value)
-  valueArr.append("")
 
   # Getting the bearer token
   path = dirname + '/key.pub'
@@ -33,12 +72,15 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post("http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/generate_token_executer", data={'key': key})
+    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
+    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
-  except:
+    organizationId = responseObject["organizationId"]
+  except Exception as ex:
     print("Key file was not found on the repository (Download it from the Muuktest portal)")
+    print (ex)
     exit()
 
   auth = {'Authorization': 'Bearer ' + token}
@@ -53,19 +95,21 @@ def run(args):
     if not os.path.exists(route):
       os.makedirs(route)
 
-    values = {'property': field, 'value': valueArr, 'userId': userId}
+    values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
-    url = 'http://ec2-3-17-71-29.us-east-2.compute.amazonaws.com:8081/download_byproperty/'
+    url = muuktestRoute+'download_byproperty/'
+    #context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
     response = request.urlopen(auth_request)
+    #response = request.urlopen(auth_request, context=context)
 
     # response = request.urlopen(url,data)
     file = response.read()
-    flag = False;
+    flag = False
 
     try:
         decode_text = file.decode("utf-8")
@@ -84,10 +128,43 @@ def run(args):
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
         os.system('chmod 544 ' + dirname + '/gradlew')
+
+        # save the dowonloaded test entry to the database
+        payload = {
+          "action": 2,
+          "userId": userId,
+          "organizationId": organizationId,
+          "options": {
+            "executor": True
+          }
+        }
+
+        try:
+          requests.post(supportRoute+"tracking_data", json=payload)
+          #requests.post(supportRoute+"tracking_data", json=payload, verify=False)
+        except Exception as e:
+          print("Not connection to support Data Base");
+
+
         if noexec == False :
           #Execute the test
           print("Executing test...")
           os.system(dirname + '/gradlew clean test')
+          testsExecuted = gatherFeedbackData()
+          url = muuktestRoute+'feedback/'
+          values = {'tests': testsExecuted, 'userId': userId}
+          hed = {'Authorization': 'Bearer ' + token}
+          try:
+            requests.post(url, json=values, headers=hed)
+            #requests.post(url, json=values, headers=hed, verify=False)
+            # save the executed test entry to the database
+            requests.post(supportRoute+"tracking_data", data={
+              'action': 3,
+              'userId': userId,
+              'organizationId': organizationId
+            })
+          except Exception as e:
+              print("Not connection to support Data Base")
 
   else:
     print(field+': is not an allowed property')
