@@ -7,13 +7,13 @@ plugins {
 
 ext {
     // The drivers we want to use
-    drivers = ["chrome"]
+    drivers = ["chrome","firefox"]
 
     ext {
         groovyVersion = '2.4.12'
         gebVersion = '2.2'
         seleniumVersion = '3.6.0'
-        chromeDriverVersion = '2.32'
+        chromeDriverVersion = '76.0.3809.68'
         geckoDriverVersion = '0.23.0'
     }
 }

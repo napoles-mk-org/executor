@@ -9,15 +9,16 @@ import urllib
 import xml.etree.ElementTree
 #import ssl
 
-def gatherFeedbackData():
-  path = 'build/test-results/chromeTest'
+def gatherFeedbackData(browserName):
+  # The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
+  path = 'build/test-results/'+browserName
 
   feedbackData = []
   for filename in os.listdir(path):
     testSuccess = True
     error = ''
     if filename.endswith('.xml'):
-      e = xml.etree.ElementTree.parse('build/test-results/chromeTest/' + filename).getroot()
+      e = xml.etree.ElementTree.parse('build/test-results/'+browserName+'/' + filename).getroot()
 
       if e.attrib['failures'] != "0" :
         testSuccess = False
@@ -48,6 +49,9 @@ def run(args):
   value = args.value
   noexec = args.noexec
   route = 'src/test/groovy'
+  browser = args.browser
+  #Check if we received a browser and get the string for the gradlew task command
+  browserName = getBrowserName(browser)
   muuktestRoute = 'https://portal.muuktest.com:8081/'
   supportRoute = 'https://testing.muuktest.com:8082/'
 
@@ -149,8 +153,8 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
-          os.system(dirname + '/gradlew clean test')
-          testsExecuted = gatherFeedbackData()
+          os.system(dirname + '/gradlew clean '+browserName)
+          testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
           values = {'tests': testsExecuted, 'userId': userId}
           hed = {'Authorization': 'Bearer ' + token}
@@ -170,6 +174,13 @@ def run(args):
     print(field+': is not an allowed property')
 
 
+def getBrowserName(browser):
+  switcher = {
+    "chrome":"chromeTest",
+    "firefox": "firefoxTest" 
+  }
+  # select a browser from the list or return firefox as default
+  return switcher.get(browser,"firefoxTest")
 
 
 def main():
@@ -177,6 +188,7 @@ def main():
     parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
     parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
     parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
+    parser.add_argument("-browser",help="(Optional). Select one o the available browsers to run the test (default firefox)", type=str, dest="browser")
     parser.set_defaults(func=run)
     args=parser.parse_args()
     args.func(args)
