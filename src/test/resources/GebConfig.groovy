@@ -30,7 +30,7 @@ environments {
   // run via “./gradlew firefoxTest”
   // See: http://code.google.com/p/selenium/wiki/FirefoxDriver
   firefox {
-		atCheckWaiting = 1
+    atCheckWaiting = 1
     driver = { new FirefoxDriver() }
   }
 }
