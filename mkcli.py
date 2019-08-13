@@ -173,7 +173,11 @@ def run(args):
   else:
     print(field+': is not an allowed property')
 
-
+#function that returns the task command for a browser if supported
+#parameters
+# browser: browsername 
+#returns 
+# a String to be used on gradlew task
 def getBrowserName(browser):
   switcher = {
     "chrome":"chromeTest",
@@ -188,7 +192,7 @@ def main():
     parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
     parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
     parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
-    parser.add_argument("-browser",help="(Optional). Select one o the available browsers to run the test (default firefox)", type=str, dest="browser")
+    parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
     parser.set_defaults(func=run)
     args=parser.parse_args()
     args.func(args)
