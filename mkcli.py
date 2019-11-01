@@ -50,6 +50,12 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  dimensions = args.dimensions
+  if dimensions is not None:
+    checkDimensions = isinstance(dimensions[0], int) & isinstance(dimensions[1],int)
+  else:
+    checkDimensions = False
+
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
   muuktestRoute = 'https://portal.muuktest.com:8081/'
@@ -100,6 +106,10 @@ def run(args):
       os.makedirs(route)
 
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
+    # Add screen dimension data if it is set as an argument
+    if checkDimensions == True:
+      values['dimensions'] = [dimensions[0],dimensions[1]]
+
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
     #context = ssl._create_unverified_context()
@@ -193,6 +203,7 @@ def main():
     parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
     parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
     parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
+    parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
     parser.set_defaults(func=run)
     args=parser.parse_args()
     args.func(args)
