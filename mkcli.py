@@ -7,7 +7,8 @@ import requests
 import json
 import urllib
 import xml.etree.ElementTree
-#import ssl
+from mkcloud import gatherScreenshots, resizeImages
+import ssl
 
 def gatherFeedbackData(browserName):
   # The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -52,11 +53,13 @@ def run(args):
   browser = args.browser
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  muuktestRoute = 'https://portal.muuktest.com:8081/'
+  muuktestRoute = 'https://testing.muuktest.com:8081/'
   supportRoute = 'https://testing.muuktest.com:8082/'
+  # cloudKey = getCloudKey()
 
-  # muuktestRoute = 'http://localhost:8081/'
-  # supportRoute = 'http://localhost:8082/'
+
+  # muuktestRoute = 'https://localhost:8081/'
+  # supportRoute = 'https://localhost:8082/'
 
 
   dirname = os.path.dirname(__file__)
@@ -76,7 +79,7 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
+    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
@@ -102,14 +105,14 @@ def run(args):
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
-    #context = ssl._create_unverified_context()
+    context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
-    response = request.urlopen(auth_request)
-    #response = request.urlopen(auth_request, context=context)
+    # response = request.urlopen(auth_request)
+    response = request.urlopen(auth_request, context=context)
 
     # response = request.urlopen(url,data)
     file = response.read()
@@ -159,8 +162,14 @@ def run(args):
           values = {'tests': testsExecuted, 'userId': userId}
           hed = {'Authorization': 'Bearer ' + token}
           try:
-            requests.post(url, json=values, headers=hed)
+            #CLOUD SCREENSHOTS
+            resizeImages(browserName)
+            filesData = gatherScreenshots(browserName)
+            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData, verify=False)
+            #Executions feedback
+            requests.post(url, json=values, headers=hed, verify=False)
             #requests.post(url, json=values, headers=hed, verify=False)
+
             # save the executed test entry to the database
             requests.post(supportRoute+"tracking_data", data={
               'action': 3,
@@ -175,16 +184,17 @@ def run(args):
 
 #function that returns the task command for a browser if supported
 #parameters
-# browser: browsername 
-#returns 
+# browser: browsername
+#returns
 # a String to be used on gradlew task
 def getBrowserName(browser):
   switcher = {
     "chrome":"chromeTest",
-    "firefox": "firefoxTest" 
+    "firefox": "firefoxTest"
   }
   # select a browser from the list or return firefox as default
   return switcher.get(browser,"firefoxTest")
+
 
 
 def main():
