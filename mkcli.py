@@ -156,6 +156,7 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
+          os.system('Xvfb :99 &; ffmpeg -f x11grab -video_size 1920x1080 -i :99 -codec:v libx264 -r 12 video.mp4;')
           os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
