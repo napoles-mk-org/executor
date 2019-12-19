@@ -55,7 +55,6 @@ def run(args):
   browserName = getBrowserName(browser)
   muuktestRoute = 'https://testing.muuktest.com:8081/'
   supportRoute = 'https://testing.muuktest.com:8082/'
-  # cloudKey = getCloudKey()
 
 
   # muuktestRoute = 'https://localhost:8081/'
@@ -156,8 +155,9 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
-          # os.system('Xvfb :99 & ffmpeg -f x11grab -video_size 1920x1080 -i :99 -codec:v libx264 -r 12 video.mp4')
+          os.system("tmux new-session -d -s BehatRecording1 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 video.mp4'")
           os.system(dirname + '/gradlew clean '+browserName)
+          os.system("tmux send-keys -t BehatRecording1 q")
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
           values = {'tests': testsExecuted, 'userId': userId}
@@ -210,3 +210,8 @@ def main():
 
 if __name__=="__main__":
 	main()
+
+
+# tmux new-session -d -s BehatRecording1 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v -qscale:v libx264 -preset ultrafast -crf 17 -r 12 video.mp4'
+# ffmpeg -r 30 -f x11grab -draw_mouse 0 -s 1280x1024 -i :99 -c:v libvpx -quality realtime -cpu-used 0 -b:v 384k -qmin 10 -qmax 42 -maxrate 384k -bufsize 1000k -an video.mp4'
+
