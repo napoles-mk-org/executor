@@ -172,13 +172,13 @@ def run(args):
             #requests.post(url, json=values, headers=hed, verify=False)
 
             # save the executed test entry to the database
-            requests.post(supportRoute+"tracking_data", data={
-              'action': 3,
-              'userId': userId,
-              'organizationId': organizationId
-            })
+            # requests.post(supportRoute+"tracking_data", data={
+            #   'action': 3,
+            #   'userId': userId,
+            #   'organizationId': organizationId
+            # })
           except Exception as e:
-              print("Not connection to support Data Base")
+              print("Not connection to support Data Base 2" + e)
 
   else:
     print(field+': is not an allowed property')
