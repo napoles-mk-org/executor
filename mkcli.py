@@ -7,6 +7,7 @@ import requests
 import json
 import urllib
 import xml.etree.ElementTree
+from mkcloud import gatherScreenshots, resizeImages
 #import ssl
 
 def gatherFeedbackData(browserName):
@@ -54,6 +55,7 @@ def run(args):
   browserName = getBrowserName(browser)
   muuktestRoute = 'https://portal.muuktest.com:8081/'
   supportRoute = 'https://testing.muuktest.com:8082/'
+
 
   # muuktestRoute = 'http://localhost:8081/'
   # supportRoute = 'http://localhost:8082/'
@@ -158,9 +160,24 @@ def run(args):
           url = muuktestRoute+'feedback/'
           values = {'tests': testsExecuted, 'userId': userId}
           hed = {'Authorization': 'Bearer ' + token}
+
+          #CLOUD SCREENSHOTS STARTS #
+          resizeImages(browserName)
+          filesData = gatherScreenshots(browserName)
           try:
+            if filesData != {}:
+              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+            else:
+              print ("filesData empty.. cannot send screenshots")
+          except Exception as e:
+            print("Cannot send screenshots")
+            print(e)
+            ## CLOUD SCREENSHOTS ENDS
+          try:
+            #Executions feedback
             requests.post(url, json=values, headers=hed)
             #requests.post(url, json=values, headers=hed, verify=False)
+
             # save the executed test entry to the database
             requests.post(supportRoute+"tracking_data", data={
               'action': 3,
@@ -168,23 +185,25 @@ def run(args):
               'organizationId': organizationId
             })
           except Exception as e:
-              print("Not connection to support Data Base")
+            print("Not connection to support Data Base")
+            print(e)
 
   else:
     print(field+': is not an allowed property')
 
 #function that returns the task command for a browser if supported
 #parameters
-# browser: browsername 
-#returns 
+# browser: browsername
+#returns
 # a String to be used on gradlew task
 def getBrowserName(browser):
   switcher = {
     "chrome":"chromeTest",
-    "firefox": "firefoxTest" 
+    "firefox": "firefoxTest"
   }
   # select a browser from the list or return firefox as default
   return switcher.get(browser,"firefoxTest")
+
 
 
 def main():
