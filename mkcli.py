@@ -78,7 +78,7 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
+    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
     #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
@@ -104,14 +104,14 @@ def run(args):
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
-    context = ssl._create_unverified_context()
+    # context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
-    # response = request.urlopen(auth_request)
-    response = request.urlopen(auth_request, context=context)
+    response = request.urlopen(auth_request)
+    # response = request.urlopen(auth_request, context=context)
 
     # response = request.urlopen(url,data)
     file = response.read()
@@ -166,9 +166,9 @@ def run(args):
             #CLOUD SCREENSHOTS
             resizeImages(browserName)
             filesData = gatherScreenshots(browserName)
-            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData, verify=False)
+            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
             #Executions feedback
-            requests.post(url, json=values, headers=hed, verify=False)
+            requests.post(url, json=values, headers=hed)
             #requests.post(url, json=values, headers=hed, verify=False)
 
             # save the executed test entry to the database
