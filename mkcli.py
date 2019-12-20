@@ -158,7 +158,7 @@ def run(args):
           os.system("tmux new-session -d -s BehatRecording1 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 video.mp4'")
           os.system(dirname + '/gradlew clean '+browserName)
           os.system("tmux send-keys -t BehatRecording1 q")
-          os.system("tmux kill-session -t BehatRecording1")
+          # os.system("tmux kill-session -t BehatRecording1")
 
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
