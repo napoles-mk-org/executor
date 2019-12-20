@@ -22,7 +22,7 @@ def gatherScreenshots(browserName):
     if filename.endswith('.png'):
       files.append(open(path + '/' + filename, 'rb'))
       fileNames.append('file')
-  files.append(open('video.mp4'))
+  # files.append(open('video.mp4'))
   final = zip(fileNames, files)
   return(final)
 
