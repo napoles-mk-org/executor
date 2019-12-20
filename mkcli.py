@@ -50,6 +50,9 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  #Exit code to report at circleci
+  exitCode = 1
+
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
   muuktestRoute = 'https://portal.muuktest.com:8081/'
@@ -78,7 +81,7 @@ def run(args):
     key = key_file.read()
     r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
     #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
-    responseObject = json.loads(r.content)
+    responseObject = r.json()
     token = responseObject["token"]
     userId = responseObject["userId"]
     organizationId = responseObject["organizationId"]
@@ -153,7 +156,7 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
-          os.system(dirname + '/gradlew clean '+browserName)
+          exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
           values = {'tests': testsExecuted, 'userId': userId}
@@ -169,9 +172,9 @@ def run(args):
             })
           except Exception as e:
               print("Not connection to support Data Base")
-
   else:
     print(field+': is not an allowed property')
+  exit(exitCode)
 
 #function that returns the task command for a browser if supported
 #parameters
