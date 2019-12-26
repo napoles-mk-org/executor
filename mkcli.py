@@ -7,6 +7,7 @@ import requests
 import json
 import urllib
 import xml.etree.ElementTree
+from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
 #import ssl
 
@@ -51,6 +52,8 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  #Exit code to report at circleci
+  exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
   muuktestRoute = 'https://portal.muuktest.com:8081/'
@@ -87,7 +90,7 @@ def run(args):
   except Exception as ex:
     print("Key file was not found on the repository (Download it from the Muuktest portal)")
     print (ex)
-    exit()
+    exit(exitCode)
 
   auth = {'Authorization': 'Bearer ' + token}
 
@@ -97,9 +100,16 @@ def run(args):
     # #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
-    shutil.rmtree(route, ignore_errors=True)
-    if not os.path.exists(route):
-      os.makedirs(route)
+
+    if os.path.exists(route):
+      print("copy dir")
+      folderName = strftime("%m_%d_%Y_%H_%M_%S")
+      dest = "bckSrc/"+folderName
+      print(dest)
+      shutil.copytree(route, dest)
+      shutil.copytree("build/", dest+"/build")
+      shutil.rmtree(route, ignore_errors=True)
+    os.makedirs(route)
 
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
@@ -155,7 +165,8 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
-          os.system(dirname + '/gradlew clean '+browserName)
+          exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
+          #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
           values = {'tests': testsExecuted, 'userId': userId}
@@ -163,16 +174,18 @@ def run(args):
 
           #CLOUD SCREENSHOTS STARTS #
           resizeImages(browserName)
+          #cloudKey = getCloudKey()
           filesData = gatherScreenshots(browserName)
           try:
             if filesData != {}:
               requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+              #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData,  verify=False)
             else:
               print ("filesData empty.. cannot send screenshots")
           except Exception as e:
             print("Cannot send screenshots")
             print(e)
-            ## CLOUD SCREENSHOTS ENDS
+          ## CLOUD SCREENSHOTS ENDS
           try:
             #Executions feedback
             requests.post(url, json=values, headers=hed)
@@ -190,6 +203,9 @@ def run(args):
 
   else:
     print(field+': is not an allowed property')
+
+  print("exiting script with exitcode: " + str(exitCode))
+  exit(exitCode)
 
 #function that returns the task command for a browser if supported
 #parameters
