@@ -9,7 +9,7 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-#import ssl
+import ssl
 
 def gatherFeedbackData(browserName):
   # The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -56,12 +56,12 @@ def run(args):
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  muuktestRoute = 'https://portal.muuktest.com:8081/'
-  supportRoute = 'https://testing.muuktest.com:8082/'
+  # muuktestRoute = 'https://portal.muuktest.com:8081/'
+  # supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  # muuktestRoute = 'http://localhost:8081/'
-  # supportRoute = 'http://localhost:8082/'
+  muuktestRoute = 'https://localhost:8081/'
+  supportRoute = 'https://localhost:8082/'
 
 
   dirname = os.path.dirname(__file__)
@@ -81,8 +81,8 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
-    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
+    # r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
+    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
@@ -100,6 +100,10 @@ def run(args):
     # #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
+    for item in os.listdir(''):
+      if item.endswith(".mp4"):
+      os.remove(item))
+
 
     if os.path.exists(route):
       print("copy dir")
@@ -114,14 +118,14 @@ def run(args):
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
-    #context = ssl._create_unverified_context()
+    context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
-    response = request.urlopen(auth_request)
-    #response = request.urlopen(auth_request, context=context)
+    # response = request.urlopen(auth_request)
+    response = request.urlopen(auth_request, context=context)
 
     # response = request.urlopen(url,data)
     file = response.read()
@@ -142,8 +146,9 @@ def run(args):
 
         # Unzip the file // the library needs the file to end in .rar for some reason
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
-
+        os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12" + organizationId + "_" + executionNumber ".mp4'")
         os.system('chmod 544 ' + dirname + '/gradlew')
+        os.system("tmux send-keys -t Muukrecording q")
 
         # save the dowonloaded test entry to the database
         payload = {
@@ -156,8 +161,8 @@ def run(args):
         }
 
         try:
-          requests.post(supportRoute+"tracking_data", json=payload)
-          #requests.post(supportRoute+"tracking_data", json=payload, verify=False)
+          # requests.post(supportRoute+"tracking_data", json=payload)
+          requests.post(supportRoute+"tracking_data", json=payload, verify=False)
         except Exception as e:
           print("Not connection to support Data Base");
 
@@ -169,7 +174,15 @@ def run(args):
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
-          values = {'tests': testsExecuted, 'userId': userId}
+          executionNumber = 0
+          try:
+            execFile = open('src/test/groovy/executionNumber.execution', 'r')
+            executionNumber = execFile.read()
+          except Exception as e:
+            print("Cannot read executionNumber file")
+            print(e)
+          values = {'tests': testsExecuted, 'userId': userId, 'executionNumber': executionNumber}
+          print(values)
           hed = {'Authorization': 'Bearer ' + token}
 
           #CLOUD SCREENSHOTS STARTS #
@@ -178,8 +191,12 @@ def run(args):
           filesData = gatherScreenshots(browserName)
           try:
             if filesData != {}:
-              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-              #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData,  verify=False)
+              # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
+              data = {'organizationId':organizationId,'executionNumber':executionNumber}
+              videoFile = open(organizationId+executionNumber+'.mp4', 'rb')
+              files = {'file': videoFile}
+              requests.post(muuktestRoute + 'upload_cloud_video/', headers=hed, files=files, data=data, verify=False)
             else:
               print ("filesData empty.. cannot send screenshots")
           except Exception as e:
@@ -188,8 +205,8 @@ def run(args):
           ## CLOUD SCREENSHOTS ENDS
           try:
             #Executions feedback
-            requests.post(url, json=values, headers=hed)
-            #requests.post(url, json=values, headers=hed, verify=False)
+            # requests.post(url, json=values, headers=hed)
+            requests.post(url, json=values, headers=hed, verify=False)
 
             # save the executed test entry to the database
             requests.post(supportRoute+"tracking_data", data={
