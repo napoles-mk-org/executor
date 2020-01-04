@@ -102,7 +102,7 @@ def run(args):
       os.remove('test.rar')
     for item in os.listdir(''):
       if item.endswith(".mp4"):
-      os.remove(item))
+        os.remove(item))
 
 
     if os.path.exists(route):
