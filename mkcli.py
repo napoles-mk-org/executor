@@ -100,9 +100,9 @@ def run(args):
     # #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
-    for item in os.listdir('/'):
+    for item in os.listdir('.'):
       if item.endswith(".mp4"):
-        os.remove('/'+item)
+        os.remove(item)
 
 
     if os.path.exists(route):
