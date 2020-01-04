@@ -146,7 +146,7 @@ def run(args):
 
         # Unzip the file // the library needs the file to end in .rar for some reason
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
-        os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12" + organizationId + "_" + executionNumber ".mp4'")
+        os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + organizationId + "_" + executionNumber ".mp4'")
         os.system('chmod 544 ' + dirname + '/gradlew')
         os.system("tmux send-keys -t Muukrecording q")
 
