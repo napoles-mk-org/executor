@@ -146,6 +146,15 @@ def run(args):
 
         # Unzip the file // the library needs the file to end in .rar for some reason
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
+        
+        executionNumber = 0
+        try:
+          execFile = open('src/test/groovy/executionNumber.execution', 'r')
+          executionNumber = execFile.read()
+        except Exception as e:
+          print("Cannot read executionNumber file")
+          print(e)
+
         os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
         os.system('chmod 544 ' + dirname + '/gradlew')
         os.system("tmux send-keys -t Muukrecording q")
@@ -174,13 +183,6 @@ def run(args):
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
-          executionNumber = 0
-          try:
-            execFile = open('src/test/groovy/executionNumber.execution', 'r')
-            executionNumber = execFile.read()
-          except Exception as e:
-            print("Cannot read executionNumber file")
-            print(e)
           values = {'tests': testsExecuted, 'userId': userId, 'executionNumber': executionNumber}
           print(values)
           hed = {'Authorization': 'Bearer ' + token}
