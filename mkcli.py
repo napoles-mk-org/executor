@@ -194,7 +194,7 @@ def run(args):
               # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
               requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
               data = {'organizationId':organizationId,'executionNumber':executionNumber}
-              videoFile = open(organizationId+executionNumber+'.mp4', 'rb')
+              videoFile = open(str(organizationId)+str(executionNumber)+'.mp4', 'rb')
               files = {'file': videoFile}
               requests.post(muuktestRoute + 'upload_cloud_video/', headers=hed, files=files, data=data, verify=False)
             else:
