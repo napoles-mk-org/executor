@@ -146,7 +146,7 @@ def run(args):
 
         # Unzip the file // the library needs the file to end in .rar for some reason
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
-        
+
         executionNumber = 0
         try:
           execFile = open('src/test/groovy/executionNumber.execution', 'r')
@@ -155,9 +155,7 @@ def run(args):
           print("Cannot read executionNumber file")
           print(e)
 
-        os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
         os.system('chmod 544 ' + dirname + '/gradlew')
-        os.system("tmux send-keys -t Muukrecording q")
 
         # save the dowonloaded test entry to the database
         payload = {
@@ -179,7 +177,11 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
+
+          os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
+          os.system("tmux send-keys -t Muukrecording q")
+          
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
@@ -195,6 +197,7 @@ def run(args):
             if filesData != {}:
               # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
               requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
+              
               data = {'organizationId':organizationId,'executionNumber':executionNumber}
               videoFile = open(str(organizationId)+str(executionNumber)+'.mp4', 'rb')
               files = {'file': videoFile}
