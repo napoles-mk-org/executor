@@ -186,7 +186,6 @@ def run(args):
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
           values = {'tests': testsExecuted, 'userId': userId, 'executionNumber': executionNumber}
-          print(values)
           hed = {'Authorization': 'Bearer ' + token}
 
           #CLOUD SCREENSHOTS STARTS #
@@ -199,7 +198,7 @@ def run(args):
               requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
               
               data = {'organizationId':organizationId,'executionNumber':executionNumber}
-              videoFile = open(str(organizationId)+str(executionNumber)+'.mp4', 'rb')
+              videoFile = open(str(organizationId)+"_"+str(executionNumber)+'.mp4', 'rb')
               files = {'file': videoFile}
               requests.post(muuktestRoute + 'upload_cloud_video/', headers=hed, files=files, data=data, verify=False)
             else:
