@@ -56,12 +56,12 @@ def run(args):
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  # muuktestRoute = 'https://portal.muuktest.com:8081/'
-  # supportRoute = 'https://testing.muuktest.com:8082/'
+  muuktestRoute = 'https://testing.muuktest.com:8081/'
+  supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  muuktestRoute = 'https://localhost:8081/'
-  supportRoute = 'https://localhost:8082/'
+  # muuktestRoute = 'https://localhost:8081/'
+  # supportRoute = 'https://localhost:8082/'
 
 
   dirname = os.path.dirname(__file__)
