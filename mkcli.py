@@ -9,7 +9,7 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-#import ssl
+# import ssl
 
 def gatherFeedbackData(browserName):
   # The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -60,8 +60,8 @@ def run(args):
   supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  # muuktestRoute = 'http://localhost:8081/'
-  # supportRoute = 'http://localhost:8082/'
+  # muuktestRoute = 'https://localhost:8081/'
+  # supportRoute = 'https://localhost:8082/'
 
 
   dirname = os.path.dirname(__file__)
@@ -169,7 +169,7 @@ def run(args):
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
-          values = {'tests': testsExecuted, 'userId': userId}
+          values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName}
           hed = {'Authorization': 'Bearer ' + token}
 
           #CLOUD SCREENSHOTS STARTS #
@@ -179,7 +179,7 @@ def run(args):
           try:
             if filesData != {}:
               requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-              #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData,  verify=False)
+              # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
             else:
               print ("filesData empty.. cannot send screenshots")
           except Exception as e:
