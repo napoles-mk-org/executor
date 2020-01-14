@@ -60,8 +60,8 @@ def run(args):
   supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  # muuktestRoute = 'http://localhost:8081/'
-  # supportRoute = 'http://localhost:8082/'
+  # muuktestRoute = 'https://localhost:8081/'
+  # supportRoute = 'https://localhost:8082/'
 
 
   dirname = os.path.dirname(__file__)
@@ -169,7 +169,7 @@ def run(args):
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
-          values = {'tests': testsExecuted, 'userId': userId}
+          values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName}
           hed = {'Authorization': 'Bearer ' + token}
 
           #CLOUD SCREENSHOTS STARTS #
