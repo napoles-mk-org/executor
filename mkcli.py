@@ -9,7 +9,7 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-# import ssl
+#import ssl
 
 def gatherFeedbackData(browserName):
   # The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -179,7 +179,7 @@ def run(args):
           try:
             if filesData != {}:
               requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-              # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
+              #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData,  verify=False)
             else:
               print ("filesData empty.. cannot send screenshots")
           except Exception as e:
