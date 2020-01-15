@@ -52,16 +52,17 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  executionNumber = args.executionNumber or 0
   #Exit code to report at circleci
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  muuktestRoute = 'https://testing.muuktest.com:8081/'
-  supportRoute = 'https://testing.muuktest.com:8082/'
+  # muuktestRoute = 'https://testing.muuktest.com:8081/'
+  # supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  # muuktestRoute = 'https://localhost:8081/'
-  # supportRoute = 'https://localhost:8082/'
+  muuktestRoute = 'https://localhost:8081/'
+  supportRoute = 'https://localhost:8082/'
 
 
   dirname = os.path.dirname(__file__)
@@ -115,7 +116,7 @@ def run(args):
       shutil.rmtree(route, ignore_errors=True)
     os.makedirs(route)
 
-    values = {'property': field, 'value[]': valueArr, 'userId': userId}
+    values = {'property': field, 'value[]': valueArr, 'userId': userId, 'executionnumber': executionNumber}
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
     context = ssl._create_unverified_context()
@@ -147,7 +148,6 @@ def run(args):
         # Unzip the file // the library needs the file to end in .rar for some reason
         shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
-        executionNumber = 0
         try:
           execFile = open('src/test/groovy/executionNumber.execution', 'r')
           executionNumber = execFile.read()
@@ -177,11 +177,11 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
-          os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 25  -color_primaries smpte170m -color_trc smpte170m -colorspace smpte170m  " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
+          # os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 25  -color_primaries smpte170m -color_trc smpte170m -colorspace smpte170m  " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
 
           # os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
-          os.system("tmux send-keys -t Muukrecording q")
+          # os.system("tmux send-keys -t Muukrecording q")
           
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
@@ -250,6 +250,7 @@ def main():
     parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
     parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
     parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
+    parser.add_argument("-executionnumber",help="(Optional) this numbers contain the executionnumber from the cloud execution", type=str, dest="executionnumber")
     parser.set_defaults(func=run)
     args=parser.parse_args()
     args.func(args)
