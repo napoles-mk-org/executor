@@ -9,7 +9,7 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-import ssl
+# import ssl
 
 def gatherFeedbackData(browserName):
   # The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -52,7 +52,7 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
-  executionNumber = args.executionNumber or 0
+  executionNumber = None
   #Exit code to report at circleci
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
@@ -82,8 +82,8 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    # r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
-    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
+    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
+    # r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
@@ -116,17 +116,17 @@ def run(args):
       shutil.rmtree(route, ignore_errors=True)
     os.makedirs(route)
 
-    values = {'property': field, 'value[]': valueArr, 'userId': userId, 'executionnumber': executionNumber}
+    values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
-    context = ssl._create_unverified_context()
+    # context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
-    # response = request.urlopen(auth_request)
-    response = request.urlopen(auth_request, context=context)
+    response = request.urlopen(auth_request)
+    # response = request.urlopen(auth_request, context=context)
 
     # response = request.urlopen(url,data)
     file = response.read()
@@ -168,8 +168,8 @@ def run(args):
         }
 
         try:
-          # requests.post(supportRoute+"tracking_data", json=payload)
-          requests.post(supportRoute+"tracking_data", json=payload, verify=False)
+          requests.post(supportRoute+"tracking_data", json=payload)
+          # requests.post(supportRoute+"tracking_data", json=payload, verify=False)
         except Exception as e:
           print("Not connection to support Data Base");
 
@@ -186,7 +186,7 @@ def run(args):
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
-          values = {'tests': testsExecuted, 'userId': userId, 'executionNumber': executionNumber}
+          values = {'tests': testsExecuted, 'userId': userId, 'executionNumber': int(executionNumber)}
           hed = {'Authorization': 'Bearer ' + token}
 
           #CLOUD SCREENSHOTS STARTS #
@@ -195,13 +195,8 @@ def run(args):
           filesData = gatherScreenshots(browserName)
           try:
             if filesData != {}:
-              # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
-              
-              data = {'organizationId':organizationId,'executionNumber':executionNumber}
-              videoFile = open(str(organizationId)+"_"+str(executionNumber)+'.mp4', 'rb')
-              files = {'file': videoFile}
-              requests.post(muuktestRoute + 'upload_cloud_video/', headers=hed, files=files, data=data, verify=False)
+              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+              # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
             else:
               print ("filesData empty.. cannot send screenshots")
           except Exception as e:
@@ -210,8 +205,8 @@ def run(args):
           ## CLOUD SCREENSHOTS ENDS
           try:
             #Executions feedback
-            # requests.post(url, json=values, headers=hed)
-            requests.post(url, json=values, headers=hed, verify=False)
+            requests.post(url, json=values, headers=hed)
+            # requests.post(url, json=values, headers=hed, verify=False)
 
             # save the executed test entry to the database
             requests.post(supportRoute+"tracking_data", data={
@@ -250,7 +245,6 @@ def main():
     parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
     parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
     parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
-    parser.add_argument("-executionnumber",help="(Optional) this numbers contain the executionnumber from the cloud execution", type=str, dest="executionnumber")
     parser.set_defaults(func=run)
     args=parser.parse_args()
     args.func(args)
