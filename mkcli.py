@@ -181,7 +181,7 @@ def run(args):
         requests.post(supportRoute+"tracking_data", json=payload)
         # requests.post(supportRoute+"tracking_data", json=payload, verify=False)
       except Exception as e:
-        print("Not connection to support Data Base");
+        print("No connection to support Data Base")
 
 
       if noexec == False :
@@ -195,7 +195,7 @@ def run(args):
 
         testsExecuted = gatherFeedbackData(browserName)
         url = muuktestRoute+'feedback/'
-        values = {'tests': testsExecuted, 'userId': userId, 'executionNumber': int(executionNumber)}
+        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
         hed = {'Authorization': 'Bearer ' + token}
 
         #CLOUD SCREENSHOTS STARTS #
