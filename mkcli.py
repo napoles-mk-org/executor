@@ -46,7 +46,8 @@ def gatherFeedbackData(browserName):
     testResult = {
       "success" : False,
       #"executionAt": "",
-      "error" : "Test failed during execution. This could be compilation error"
+      "error" : "Test failed during execution. This could be compilation error",
+      "compilationError" : True
     }
     feedbackData.append(testResult)
 
