@@ -7,6 +7,8 @@ import requests
 import json
 import urllib
 import xml.etree.ElementTree
+from time import strftime
+from mkcloud import gatherScreenshots, resizeImages
 #import ssl
 
 def gatherFeedbackData(browserName):
@@ -56,10 +58,13 @@ def run(args):
   else:
     checkDimensions = False
 
+  #Exit code to report at circleci
+  exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
   muuktestRoute = 'https://portal.muuktest.com:8081/'
   supportRoute = 'https://testing.muuktest.com:8082/'
+
 
   # muuktestRoute = 'http://localhost:8081/'
   # supportRoute = 'http://localhost:8082/'
@@ -91,7 +96,7 @@ def run(args):
   except Exception as ex:
     print("Key file was not found on the repository (Download it from the Muuktest portal)")
     print (ex)
-    exit()
+    exit(exitCode)
 
   auth = {'Authorization': 'Bearer ' + token}
 
@@ -101,9 +106,16 @@ def run(args):
     # #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
-    shutil.rmtree(route, ignore_errors=True)
-    if not os.path.exists(route):
-      os.makedirs(route)
+
+    if os.path.exists(route):
+      print("copy dir")
+      folderName = strftime("%m_%d_%Y_%H_%M_%S")
+      dest = "bckSrc/"+folderName
+      print(dest)
+      shutil.copytree(route, dest)
+      shutil.copytree("build/", dest+"/build")
+      shutil.rmtree(route, ignore_errors=True)
+    os.makedirs(route)
 
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # Add screen dimension data if it is set as an argument
@@ -163,14 +175,32 @@ def run(args):
         if noexec == False :
           #Execute the test
           print("Executing test...")
-          os.system(dirname + '/gradlew clean '+browserName)
+          exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
+          #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
           url = muuktestRoute+'feedback/'
           values = {'tests': testsExecuted, 'userId': userId}
           hed = {'Authorization': 'Bearer ' + token}
+
+          #CLOUD SCREENSHOTS STARTS #
+          resizeImages(browserName)
+          #cloudKey = getCloudKey()
+          filesData = gatherScreenshots(browserName)
           try:
+            if filesData != {}:
+              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+              #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData,  verify=False)
+            else:
+              print ("filesData empty.. cannot send screenshots")
+          except Exception as e:
+            print("Cannot send screenshots")
+            print(e)
+          ## CLOUD SCREENSHOTS ENDS
+          try:
+            #Executions feedback
             requests.post(url, json=values, headers=hed)
             #requests.post(url, json=values, headers=hed, verify=False)
+
             # save the executed test entry to the database
             requests.post(supportRoute+"tracking_data", data={
               'action': 3,
@@ -178,20 +208,24 @@ def run(args):
               'organizationId': organizationId
             })
           except Exception as e:
-              print("Not connection to support Data Base")
+            print("Not connection to support Data Base")
+            print(e)
 
   else:
     print(field+': is not an allowed property')
 
+  print("exiting script with exitcode: " + str(exitCode))
+  exit(exitCode)
+
 #function that returns the task command for a browser if supported
 #parameters
-# browser: browsername 
-#returns 
+# browser: browsername
+#returns
 # a String to be used on gradlew task
 def getBrowserName(browser):
   switcher = {
     "chrome":"chromeTest",
-    "firefox": "firefoxTest" 
+    "firefox": "firefoxTest"
   }
   # select a browser from the list or return firefox as default
   return switcher.get(browser,"firefoxTest")
