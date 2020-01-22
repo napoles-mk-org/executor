@@ -13,14 +13,14 @@ ext {
         groovyVersion = '2.4.12'
         gebVersion = '2.2'
         seleniumVersion = '3.6.0'
-        chromeDriverVersion = '76.0.3809.68'
+        chromeDriverVersion = '79.0.3945.36'
         geckoDriverVersion = '0.23.0'
     }
 }
 
 repositories {
     mavenCentral()
-}     
+}
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.6'

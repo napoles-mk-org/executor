@@ -9,37 +9,47 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-#import ssl
+# import ssl
 
 def gatherFeedbackData(browserName):
   # The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
   path = 'build/test-results/'+browserName
 
   feedbackData = []
-  for filename in os.listdir(path):
-    testSuccess = True
-    error = ''
-    if filename.endswith('.xml'):
-      e = xml.etree.ElementTree.parse('build/test-results/'+browserName+'/' + filename).getroot()
+  if os.path.exists(path):
+    for filename in os.listdir(path):
+      testSuccess = True
+      error = ''
+      if filename.endswith('.xml'):
+        e = xml.etree.ElementTree.parse('build/test-results/'+browserName+'/' + filename).getroot()
 
-      if e.attrib['failures'] != "0" :
-        testSuccess = False
+        if e.attrib['failures'] != "0" :
+          testSuccess = False
 
-      if testSuccess == False :
-        if e.find('testcase') is not None :
-          if e.find('testcase').find('failure') is not None :
-            error = e.find('testcase').find('failure').attrib['message']
+        if testSuccess == False :
+          if e.find('testcase') is not None :
+            if e.find('testcase').find('failure') is not None :
+              error = e.find('testcase').find('failure').attrib['message']
 
-      testResult = {
-        "className": e.attrib['name'] if e.attrib['name'] is not None else "",
-        "success": testSuccess,
-        "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
-        "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
-        "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
-        "error":  error,
-        "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
-      }
-      feedbackData.append(testResult)
+        testResult = {
+          "className": e.attrib['name'] if e.attrib['name'] is not None else "",
+          "success": testSuccess,
+          "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
+          "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
+          "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
+          "error":  error,
+          "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
+        }
+        feedbackData.append(testResult)
+  else:
+    print("gatherFeedbackData - path does not exists ")
+    testResult = {
+      "success" : False,
+      #"executionAt": "",
+      "error" : "Test failed during execution. This could be compilation error",
+      "compilationError" : True
+    }
+    feedbackData.append(testResult)
 
   return(feedbackData)
 
@@ -58,16 +68,18 @@ def run(args):
   else:
     checkDimensions = False
 
+  executionNumber = None
   #Exit code to report at circleci
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
   muuktestRoute = 'https://portal.muuktest.com:8081/'
-  supportRoute = 'https://testing.muuktest.com:8082/'
+  supportRoute = 'https://portal.muuktest.com:8082/'
 
 
-  # muuktestRoute = 'http://localhost:8081/'
-  # supportRoute = 'http://localhost:8082/'
+  # muuktestRoute = 'https://localhost:8081/'
+  # supportRoute = 'https://localhost:8082/'
+
 
 
   dirname = os.path.dirname(__file__)
@@ -88,7 +100,7 @@ def run(args):
     key_file = open(path,'r')
     key = key_file.read()
     r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
-    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
+    # r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
@@ -106,6 +118,10 @@ def run(args):
     # #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
+    for item in os.listdir('.'):
+      if item.endswith(".mp4"):
+        os.remove(item)
+
 
     if os.path.exists(route):
       print("copy dir")
@@ -124,93 +140,103 @@ def run(args):
 
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
-    #context = ssl._create_unverified_context()
+    # context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     # now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
     response = request.urlopen(auth_request)
-    #response = request.urlopen(auth_request, context=context)
+    # response = request.urlopen(auth_request, context=context)
 
     # response = request.urlopen(url,data)
     file = response.read()
     flag = False
 
     try:
-        decode_text = file.decode("utf-8")
-        json_decode = json.loads(file.decode("utf-8"))
-        print(json_decode["message"])
+      decode_text = file.decode("utf-8")
+      json_decode = json.loads(file.decode("utf-8"))
+      print(json_decode["message"])
     except:
-        flag = True
+      flag = True
 
     if (flag == True):
-        print("The test has been downloaded successfully")
-        fileobj = open('test.zip',"wb")
-        fileobj.write(file)
-        fileobj.close()
+      print("The test has been downloaded successfully")
+      fileobj = open('test.zip',"wb")
+      fileobj.write(file)
+      fileobj.close()
 
-        # Unzip the file // the library needs the file to end in .rar for some reason
-        shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
+      # Unzip the file // the library needs the file to end in .rar for some reason
+      shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
-        os.system('chmod 544 ' + dirname + '/gradlew')
+      try:
+        execFile = open('src/test/groovy/executionNumber.execution', 'r')
+        executionNumber = execFile.read()
+      except Exception as e:
+        print("Cannot read executionNumber file")
+        print(e)
 
-        # save the dowonloaded test entry to the database
-        payload = {
-          "action": 2,
-          "userId": userId,
-          "organizationId": organizationId,
-          "options": {
-            "executor": True
-          }
+      os.system('chmod 544 ' + dirname + '/gradlew')
+
+      # save the dowonloaded test entry to the database
+      payload = {
+        "action": 2,
+        "userId": userId,
+        "organizationId": organizationId,
+        "options": {
+          "executor": True
         }
+      }
 
+      try:
+        requests.post(supportRoute+"tracking_data", json=payload)
+        # requests.post(supportRoute+"tracking_data", json=payload, verify=False)
+      except Exception as e:
+        print("No connection to support Data Base")
+
+
+      if noexec == False :
+        #Execute the test
+        print("Executing test...")
         try:
-          requests.post(supportRoute+"tracking_data", json=payload)
-          #requests.post(supportRoute+"tracking_data", json=payload, verify=False)
-        except Exception as e:
-          print("Not connection to support Data Base");
-
-
-        if noexec == False :
-          #Execute the test
-          print("Executing test...")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
-          #os.system(dirname + '/gradlew clean '+browserName)
-          testsExecuted = gatherFeedbackData(browserName)
-          url = muuktestRoute+'feedback/'
-          values = {'tests': testsExecuted, 'userId': userId}
-          hed = {'Authorization': 'Bearer ' + token}
+        except Exception as e:
+          print("Error during gradlew compilation and/or execution ")
+          print(e)
 
-          #CLOUD SCREENSHOTS STARTS #
-          resizeImages(browserName)
-          #cloudKey = getCloudKey()
-          filesData = gatherScreenshots(browserName)
-          try:
-            if filesData != {}:
-              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-              #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData,  verify=False)
-            else:
-              print ("filesData empty.. cannot send screenshots")
-          except Exception as e:
-            print("Cannot send screenshots")
-            print(e)
-          ## CLOUD SCREENSHOTS ENDS
-          try:
-            #Executions feedback
-            requests.post(url, json=values, headers=hed)
-            #requests.post(url, json=values, headers=hed, verify=False)
+        testsExecuted = gatherFeedbackData(browserName)
+        url = muuktestRoute+'feedback/'
+        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
+        hed = {'Authorization': 'Bearer ' + token}
 
-            # save the executed test entry to the database
-            requests.post(supportRoute+"tracking_data", data={
-              'action': 3,
-              'userId': userId,
-              'organizationId': organizationId
-            })
-          except Exception as e:
-            print("Not connection to support Data Base")
-            print(e)
+        #CLOUD SCREENSHOTS STARTS #
+        resizeImages(browserName)
+        #cloudKey = getCloudKey()
+        filesData = gatherScreenshots(browserName)
+        try:
+          if filesData != {}:
+            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+            # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
+          else:
+            print ("filesData empty.. cannot send screenshots")
+        except Exception as e:
+          print("Cannot send screenshots")
+          print(e)
+        ## CLOUD SCREENSHOTS ENDS
+        try:
+          #Executions feedback
+          requests.post(url, json=values, headers=hed)
+          # requests.post(url, json=values, headers=hed, verify=False)
 
+          # save the executed test entry to the database
+          requests.post(supportRoute+"tracking_data", data={
+            'action': 3,
+            'userId': userId,
+            'organizationId': organizationId
+          })
+        except Exception as e:
+          print("Not connection to support Data Base")
+          print(e)
   else:
     print(field+': is not an allowed property')
 
@@ -232,15 +258,16 @@ def getBrowserName(browser):
 
 
 def main():
-    parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
-    parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
-    parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
-    parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
-    parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
-    parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
-    parser.set_defaults(func=run)
-    args=parser.parse_args()
-    args.func(args)
+  parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
+  parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
+  parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
+  parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
+  parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
+  parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
+  parser.set_defaults(func=run)
+  args=parser.parse_args()
+  args.func(args)
+
 
 if __name__=="__main__":
 	main()
