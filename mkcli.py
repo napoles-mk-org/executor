@@ -62,6 +62,12 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  dimensions = args.dimensions
+  if dimensions is not None:
+    checkDimensions = isinstance(dimensions[0], int) & isinstance(dimensions[1],int)
+  else:
+    checkDimensions = False
+
   executionNumber = None
   #Exit code to report at circleci
   exitCode = 1
@@ -125,7 +131,11 @@ def run(args):
     os.makedirs(route)
 
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
-    #This route downloads the scripts by the property.
+    # Add screen dimension data if it is set as an argument
+    if checkDimensions == True:
+      values['dimensions'] = [dimensions[0],dimensions[1]]
+
+    # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
     #context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
@@ -247,16 +257,17 @@ def getBrowserName(browser):
   return switcher.get(browser,"firefoxTest")
 
 
-
 def main():
   parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
   parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
   parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
   parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
   parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
+  parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
   parser.set_defaults(func=run)
   args=parser.parse_args()
   args.func(args)
+
 
 if __name__=="__main__":
 	main()
