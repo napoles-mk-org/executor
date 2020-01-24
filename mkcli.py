@@ -16,30 +16,40 @@ def gatherFeedbackData(browserName):
   path = 'build/test-results/'+browserName
 
   feedbackData = []
-  for filename in os.listdir(path):
-    testSuccess = True
-    error = ''
-    if filename.endswith('.xml'):
-      e = xml.etree.ElementTree.parse('build/test-results/'+browserName+'/' + filename).getroot()
+  if os.path.exists(path):
+    for filename in os.listdir(path):
+      testSuccess = True
+      error = ''
+      if filename.endswith('.xml'):
+        e = xml.etree.ElementTree.parse('build/test-results/'+browserName+'/' + filename).getroot()
 
-      if e.attrib['failures'] != "0" :
-        testSuccess = False
+        if e.attrib['failures'] != "0" :
+          testSuccess = False
 
-      if testSuccess == False :
-        if e.find('testcase') is not None :
-          if e.find('testcase').find('failure') is not None :
-            error = e.find('testcase').find('failure').attrib['message']
+        if testSuccess == False :
+          if e.find('testcase') is not None :
+            if e.find('testcase').find('failure') is not None :
+              error = e.find('testcase').find('failure').attrib['message']
 
-      testResult = {
-        "className": e.attrib['name'] if e.attrib['name'] is not None else "",
-        "success": testSuccess,
-        "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
-        "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
-        "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
-        "error":  error,
-        "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
-      }
-      feedbackData.append(testResult)
+        testResult = {
+          "className": e.attrib['name'] if e.attrib['name'] is not None else "",
+          "success": testSuccess,
+          "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
+          "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
+          "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
+          "error":  error,
+          "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
+        }
+        feedbackData.append(testResult)
+  else:
+    print("gatherFeedbackData - path does not exists ")
+    testResult = {
+      "success" : False,
+      #"executionAt": "",
+      "error" : "Test failed during execution. This could be compilation error",
+      "compilationError" : True
+    }
+    feedbackData.append(testResult)
 
   return(feedbackData)
 
@@ -52,6 +62,7 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  executionNumber = args.executionnumber or None
   #Exit code to report at circleci
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
@@ -62,6 +73,7 @@ def run(args):
 
   # muuktestRoute = 'https://localhost:8081/'
   # supportRoute = 'https://localhost:8082/'
+
 
 
   dirname = os.path.dirname(__file__)
@@ -115,7 +127,7 @@ def run(args):
       shutil.rmtree(route, ignore_errors=True)
     os.makedirs(route)
 
-    values = {'property': field, 'value[]': valueArr, 'userId': userId}
+    values = {'property': field, 'value[]': valueArr, 'userId': userId, 'executionnumber': executionNumber}
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
     context = ssl._create_unverified_context()
@@ -132,98 +144,89 @@ def run(args):
     flag = False
 
     try:
-        decode_text = file.decode("utf-8")
-        json_decode = json.loads(file.decode("utf-8"))
-        print(json_decode["message"])
+      decode_text = file.decode("utf-8")
+      json_decode = json.loads(file.decode("utf-8"))
+      print(json_decode["message"])
     except:
-        flag = True
+      flag = True
 
     if (flag == True):
-        print("The test has been downloaded successfully")
-        fileobj = open('test.zip',"wb")
-        fileobj.write(file)
-        fileobj.close()
+      print("The test has been downloaded successfully")
+      fileobj = open('test.zip',"wb")
+      fileobj.write(file)
+      fileobj.close()
 
-        # Unzip the file // the library needs the file to end in .rar for some reason
-        shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
+      # Unzip the file // the library needs the file to end in .rar for some reason
+      shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
-        executionNumber = 0
+      try:
+        execFile = open('src/test/groovy/executionNumber.execution', 'r')
+        executionNumber = execFile.read()
+      except Exception as e:
+        print("Cannot read executionNumber file")
+        print(e)
+
+      os.system('chmod 544 ' + dirname + '/gradlew')
+
+      # save the dowonloaded test entry to the database
+      payload = {
+        "action": 2,
+        "userId": userId,
+        "organizationId": organizationId,
+        "options": {
+          "executor": True
+        }
+      }
+
+      try:
+        # requests.post(supportRoute+"tracking_data", json=payload)
+        requests.post(supportRoute+"tracking_data", json=payload, verify=False)
+      except Exception as e:
+        print("No connection to support Data Base")
+
+
+      if noexec == False :
+        #Execute the test
+        print("Executing test...")
         try:
-          execFile = open('src/test/groovy/executionNumber.execution', 'r')
-          executionNumber = execFile.read()
+          exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
         except Exception as e:
-          print("Cannot read executionNumber file")
+          print("Error during gradlew compilation and/or execution ")
           print(e)
 
-        os.system('chmod 544 ' + dirname + '/gradlew')
+        testsExecuted = gatherFeedbackData(browserName)
+        url = muuktestRoute+'feedback/'
+        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
+        hed = {'Authorization': 'Bearer ' + token}
 
-        # save the dowonloaded test entry to the database
-        payload = {
-          "action": 2,
-          "userId": userId,
-          "organizationId": organizationId,
-          "options": {
-            "executor": True
-          }
-        }
-
+        #CLOUD SCREENSHOTS STARTS #
+        resizeImages(browserName)
+        #cloudKey = getCloudKey()
+        filesData = gatherScreenshots(browserName)
         try:
-          # requests.post(supportRoute+"tracking_data", json=payload)
-          requests.post(supportRoute+"tracking_data", json=payload, verify=False)
+          if filesData != {}:
+            # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
+          else:
+            print ("filesData empty.. cannot send screenshots")
         except Exception as e:
-          print("Not connection to support Data Base");
+          print("Cannot send screenshots")
+          print(e)
+        ## CLOUD SCREENSHOTS ENDS
+        try:
+          #Executions feedback
+          # requests.post(url, json=values, headers=hed)
+          requests.post(url, json=values, headers=hed, verify=False)
 
-
-        if noexec == False :
-          #Execute the test
-          print("Executing test...")
-          # os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 25  -color_primaries smpte170m -color_trc smpte170m -colorspace smpte170m  " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
-          os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libvpx-vp9 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
-
-          # os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
-          exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
-          os.system("tmux send-keys -t Muukrecording q")
-          
-          #os.system(dirname + '/gradlew clean '+browserName)
-          testsExecuted = gatherFeedbackData(browserName)
-          url = muuktestRoute+'feedback/'
-          values = {'tests': testsExecuted, 'userId': userId, 'executionNumber': executionNumber}
-          hed = {'Authorization': 'Bearer ' + token}
-
-          #CLOUD SCREENSHOTS STARTS #
-          resizeImages(browserName)
-          #cloudKey = getCloudKey()
-          filesData = gatherScreenshots(browserName)
-          try:
-            if filesData != {}:
-              # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-              requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
-              
-              data = {'organizationId':organizationId,'executionNumber':executionNumber}
-              videoFile = open(str(organizationId)+"_"+str(executionNumber)+'.mp4', 'rb')
-              files = {'file': videoFile}
-              requests.post(muuktestRoute + 'upload_cloud_video/', headers=hed, files=files, data=data, verify=False)
-            else:
-              print ("filesData empty.. cannot send screenshots")
-          except Exception as e:
-            print("Cannot send screenshots")
-            print(e)
-          ## CLOUD SCREENSHOTS ENDS
-          try:
-            #Executions feedback
-            # requests.post(url, json=values, headers=hed)
-            requests.post(url, json=values, headers=hed, verify=False)
-
-            # save the executed test entry to the database
-            requests.post(supportRoute+"tracking_data", data={
-              'action': 3,
-              'userId': userId,
-              'organizationId': organizationId
-            })
-          except Exception as e:
-            print("Not connection to support Data Base")
-            print(e)
-
+          # save the executed test entry to the database
+          requests.post(supportRoute+"tracking_data", data={
+            'action': 3,
+            'userId': userId,
+            'organizationId': organizationId
+          })
+        except Exception as e:
+          print("Not connection to support Data Base")
+          print(e)
   else:
     print(field+': is not an allowed property')
 
@@ -246,14 +249,15 @@ def getBrowserName(browser):
 
 
 def main():
-    parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
-    parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
-    parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
-    parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
-    parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
-    parser.set_defaults(func=run)
-    args=parser.parse_args()
-    args.func(args)
+  parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
+  parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
+  parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
+  parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
+  parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
+  parser.add_argument("-executionnumber",help="(Optional) this numbers contain the executionnumber from the cloud execution", type=str, dest="executionnumber")
+  parser.set_defaults(func=run)
+  args=parser.parse_args()
+  args.func(args)
 
 if __name__=="__main__":
 	main()
