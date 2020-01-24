@@ -189,7 +189,9 @@ def run(args):
         #Execute the test
         print("Executing test...")
         try:
+          os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
+          os.system("tmux send-keys -t Muukrecording q")
         except Exception as e:
           print("Error during gradlew compilation and/or execution ")
           print(e)
@@ -207,6 +209,12 @@ def run(args):
           if filesData != {}:
             # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
             requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData,  verify=False)
+
+            data = {'organizationId':organizationId,'executionNumber':executionNumber}
+            videoFile = open(str(organizationId)+"_"+str(executionNumber)+'.mp4', 'rb')
+            files = {'file': videoFile}
+            # requests.post(muuktestRoute + 'upload_cloud_video/', headers=hed, files=files, data=data)
+            requests.post(muuktestRoute + 'upload_cloud_video/', headers=hed, files=files, data=data, verify=False)
           else:
             print ("filesData empty.. cannot send screenshots")
         except Exception as e:
