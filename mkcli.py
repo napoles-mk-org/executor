@@ -182,7 +182,7 @@ def run(args):
 
           # os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
-          # os.system("tmux send-keys -t Muukrecording q")
+          os.system("tmux send-keys -t Muukrecording q")
           
           #os.system(dirname + '/gradlew clean '+browserName)
           testsExecuted = gatherFeedbackData(browserName)
