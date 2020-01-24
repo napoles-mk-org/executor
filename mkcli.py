@@ -178,7 +178,7 @@ def run(args):
           #Execute the test
           print("Executing test...")
           # os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 25  -color_primaries smpte170m -color_trc smpte170m -colorspace smpte170m  " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
-          os.system("avconv -f video4linux2 -input_format bgr24 -i /dev/video0 -vcodec libx264 -pix_fmt yuv420p -color_range 2 -crf 14 -t 120 -y out.mp4")
+          os.system("avconv -f video4linux2 -input_format bgr24 -i :99 -vcodec libx264 -pix_fmt yuv420p -color_range 2 -crf 14 -t 120 -y out.mp4")
 
           # os.system("tmux new-session -d -s Muukrecording 'ffmpeg -f x11grab -video_size 1280x1024 -i :99 -codec:v libx264 -r 12 " + str(organizationId) + "_" + str(executionNumber) + ".mp4'")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
