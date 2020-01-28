@@ -64,7 +64,7 @@ def run(args):
   browser = args.browser
   dimensions = args.dimensions
   if dimensions is not None:
-    checkDimensions = isinstance(dimensions[0], int) & isinstance(dimensions[1],int)
+    checkDimensions = True
   else:
     checkDimensions = False
 
@@ -133,7 +133,12 @@ def run(args):
     values = {'property': field, 'value[]': valueArr, 'userId': userId}
     # Add screen dimension data if it is set as an argument
     if checkDimensions == True:
-      values['dimensions'] = [dimensions[0],dimensions[1]]
+      resultExtractDimensions = extractDimensions(dimensions)
+      if resultExtractDimensions['success'] == True:
+        values['dimensions'] = resultExtractDimensions['dimensions']
+      else:
+        print("Dimensions error")
+        exit(1)
 
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
@@ -256,6 +261,45 @@ def getBrowserName(browser):
   #select a browser from the list or return firefox as default
   return switcher.get(browser,"firefoxTest")
 
+def extractDimensions(dimensions):
+  dimensionsLength = len(dimensions)
+  dimensionsArray = [0] * 2
+  success = True
+  if dimensionsLength > 0 and dimensionsLength <=2:
+    if dimensionsLength == 1:
+      if "x" in dimensions[0].lower():
+        dimensionsSplitted = dimensions[0].lower().split("x")
+        if len(dimensionsSplitted) == 2:
+          if dimensionsSplitted[0].isdigit() and dimensionsSplitted[1].isdigit():
+            dimensionsArray = convertDimensionsToArray(dimensionsSplitted[0], dimensionsSplitted[1])
+          else:
+            print("The values received cant be converted to numbers")
+            success = False
+        else:
+          print("Dimension arguments must be equal to 2")
+          success = False
+      else:
+        print("Dimensinos should be separated by 'x' or space. ex: 1200x900 or 1200 900")
+        success = False
+    if dimensionsLength == 2:
+      if dimensions[0].isdigit() and dimensions[1].isdigit():
+        dimensionsArray = convertDimensionsToArray(dimensions[0], dimensions[1])
+      else:
+        print("The values received cant be converted to numbers")
+        success = False
+  else:
+    print("dimensions arguments may not be more than 2 or less than 0")
+    success = False
+  return {'success': success, 'dimensions': dimensionsArray}
+
+def convertDimensionsToArray(width, height):
+  dimensionArray = [0]*2
+  try:
+    dimensionArray[0] = int(width)
+    dimensionArray[1] = int(height)
+  except Exception as ex:
+    print("Error on convertion ",ex)
+  return dimensionArray
 
 def main():
   parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
@@ -263,7 +307,7 @@ def main():
   parser.add_argument("-t",help="value of the test or hashtag field" ,dest="value", type=str, required=True)
   parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
   parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
-  parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
+  parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width and height, ex. -dimensions 900x600 OR -dimensions 900 600", type=str, nargs="*", dest="dimensions")
   parser.set_defaults(func=run)
   args=parser.parse_args()
   args.func(args)
