@@ -39,6 +39,7 @@ dependencies {
     testCompile "org.seleniumhq.selenium:selenium-firefox-driver:$seleniumVersion"
 
     compile group: 'org.seleniumhq.selenium', name: 'selenium-support', version: '3.14.0'
+    compile 'com.googlecode.json-simple:json-simple:1.1.1'
 
 }
 

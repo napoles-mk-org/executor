@@ -30,15 +30,20 @@ def gatherFeedbackData(browserName):
           if e.find('testcase') is not None :
             if e.find('testcase').find('failure') is not None :
               error = e.find('testcase').find('failure').attrib['message']
-
+        className = e.attrib['name'] if e.attrib['name'] is not None else ""
+        muukReport = []
+        if os.path.exists(className+'.json'):
+          with open(className+'.json') as f:
+            muukReport = json.load(f)
         testResult = {
-          "className": e.attrib['name'] if e.attrib['name'] is not None else "",
+          "className": className,
           "success": testSuccess,
           "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
           "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
           "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
           "error":  error,
-          "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
+          "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else "",
+          "muukReport": muukReport
         }
         feedbackData.append(testResult)
   else:
@@ -77,8 +82,8 @@ def run(args):
   supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  #muuktestRoute = 'https://localhost:8081/'
-  #supportRoute = 'https://localhost:8082/'
+  # muuktestRoute = 'https://localhost:8081/'
+  # supportRoute = 'https://localhost:8082/'
 
 
 
@@ -118,7 +123,12 @@ def run(args):
     #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
-
+    
+    muukReportsRoute = "."
+    mkReports = os.listdir(muukReportsRoute)
+    for mkReport in mkReports:
+      if mkReport.endswith(".json"):
+        os.remove(mkReport)
 
     if os.path.exists(route):
       print("copy dir")
@@ -190,7 +200,7 @@ def run(args):
 
       try:
         requests.post(supportRoute+"tracking_data", json=payload)
-        # equests.post(supportRoute+"tracking_data", json=payload, verify=False)
+        # requests.post(supportRoute+"tracking_data", json=payload, verify=False)
       except Exception as e:
         print("No connection to support Data Base")
 
