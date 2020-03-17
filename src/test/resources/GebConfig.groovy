@@ -14,7 +14,12 @@ environments {
   // run via “./gradlew chromeTest”
   // See: http://code.google.com/p/selenium/wiki/ChromeDriver
   chrome {
-    driver = { new ChromeDriver() }
+    ChromeOptions o = new ChromeOptions()
+    o.addArguments('enable-logging')
+    o.addArguments('v=1')
+    o.addArguments('log-level=0')
+    o.addArguments('log-file=logs/chrome.log')
+    driver = { new ChromeDriver(o) }
   }
 
   // run via “./gradlew chromeHeadlessTest”

@@ -119,6 +119,10 @@ def run(args):
     if os.path.exists("test.rar"):
       os.remove('test.rar')
 
+    #Remove logs directory and create a new one
+    if os.path.exists("logs"):
+      shutil.rmtree('logs')
+    os.mkdir("logs")
 
     if os.path.exists(route):
       print("copy dir")
@@ -236,6 +240,21 @@ def run(args):
           })
         except Exception as e:
           print("Not connection to support Data Base")
+          print(e)
+
+        #Upload logs
+        try:
+          logPath=dirname+'/logs/'
+          if os.path.exists(dirname + '/logs/chrome.log'):
+            os.rename(logPath+'chrome.log', logPath+str(organizationId) + '_' + str(executionNumber) + '.log')
+            logFileName = logPath+ str(organizationId) + '_' + str(executionNumber) + '.log'
+            logFile = open(logFileName, 'r')
+            shutil.copytree("logs/", dest+"/logs")
+            files = {'file' : logFile}
+            requests.post( muuktestRoute + 'upload_log/' , headers=hed, files=files)
+            # requests.post( muuktestRoute + 'upload_log/' , headers=hed, files=files, verify=False)
+        except Exception as e:
+          print("Error on logs uploading")
           print(e)
   else:
     print(field+': is not an allowed property')
