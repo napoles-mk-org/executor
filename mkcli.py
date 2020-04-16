@@ -9,49 +9,10 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-#import ssl
-
-def gatherFeedbackData(browserName):
-  #The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
-  path = 'build/test-results/'+browserName
-
-  feedbackData = []
-  if os.path.exists(path):
-    for filename in os.listdir(path):
-      testSuccess = True
-      error = ''
-      if filename.endswith('.xml'):
-        e = xml.etree.ElementTree.parse('build/test-results/'+browserName+'/' + filename).getroot()
-
-        if e.attrib['failures'] != "0" :
-          testSuccess = False
-
-        if testSuccess == False :
-          if e.find('testcase') is not None :
-            if e.find('testcase').find('failure') is not None :
-              error = e.find('testcase').find('failure').attrib['message']
-
-        testResult = {
-          "className": e.attrib['name'] if e.attrib['name'] is not None else "",
-          "success": testSuccess,
-          "executionAt": e.attrib['timestamp'] if e.attrib['timestamp'] is not None else "",
-          "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
-          "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
-          "error":  error,
-          "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
-        }
-        feedbackData.append(testResult)
-  else:
-    print("gatherFeedbackData - path does not exists ")
-    testResult = {
-      "success" : False,
-      #"executionAt": "",
-      "error" : "Test failed during execution. This could be compilation error",
-      "compilationError" : True
-    }
-    feedbackData.append(testResult)
-
-  return(feedbackData)
+from utils.Common import Common
+from utils.RequestUtil import RequestUtil
+from utils.APIRequest import APIRequest
+import ssl
 
 
 def run(args):
@@ -73,13 +34,13 @@ def run(args):
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  muuktestRoute = 'https://portal.muuktest.com:8081/'
-  supportRoute = 'https://testing.muuktest.com:8082/'
+  # muuktestRoute = 'https://portal.muuktest.com:8081/'
+  # supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  #muuktestRoute = 'https://localhost:8081/'
-  #supportRoute = 'https://localhost:8082/'
-
+  muuktestRoute = 'https://localhost:8081/'
+  supportRoute = 'https://localhost:8082/'
+  apiRequest=APIRequest()
 
 
   dirname = os.path.dirname(__file__)
@@ -99,12 +60,8 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
-    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
-    responseObject = json.loads(r.content)
-    token = responseObject["token"]
-    userId = responseObject["userId"]
-    organizationId = responseObject["organizationId"]
+    apiRequest.generateToken(key)
+     
   except Exception as ex:
     print("Key file was not found on the repository (Download it from the Muuktest portal)")
     print (ex)
@@ -135,16 +92,7 @@ def run(args):
     if checkDimensions == True:
       values['dimensions'] = [dimensions[0],dimensions[1]]
 
-    # This route downloads the scripts by the property.
-    url = muuktestRoute+'download_byproperty/'
-    #context = ssl._create_unverified_context()
-    data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
-
-    #now using urlopen get the file and store it locally
-    auth_request = request.Request(url,headers=auth, data=data)
-    auth_request.add_header('Authorization', 'Bearer '+token)
-    response = request.urlopen(auth_request)
-    #response = request.urlopen(auth_request, context=context)
+    response = apiRequest.downloadByProperty(values)
 
     #response = request.urlopen(url,data)
     file = response.read()
@@ -176,67 +124,16 @@ def run(args):
       else:
         print("executionNumber.execution file not found")
 
-      os.system('chmod 544 ' + dirname + '/gradlew')
 
-      #save the dowonloaded test entry to the database
-      payload = {
-        "action": 2,
-        "userId": userId,
-        "organizationId": organizationId,
-        "options": {
-          "executor": True
-        }
-      }
-
-      try:
-        requests.post(supportRoute+"tracking_data", json=payload)
-        # equests.post(supportRoute+"tracking_data", json=payload, verify=False)
-      except Exception as e:
-        print("No connection to support Data Base")
-
+      apiRequest.sendTrackingData(2)
 
       if noexec == False :
         #Execute the test
         print("Executing test...")
-        try:
-          exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
-        except Exception as e:
-          print("Error during gradlew compilation and/or execution ")
-          print(e)
-
-        testsExecuted = gatherFeedbackData(browserName)
-        url = muuktestRoute+'feedback/'
-        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
-        hed = {'Authorization': 'Bearer ' + token}
-
-        #CLOUD SCREENSHOTS STARTS #
-        resizeImages(browserName)
-        #cloudKey = getCloudKey()
-        filesData = gatherScreenshots(browserName)
-        try:
-          if filesData != {}:
-            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-            #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
-          else:
-            print ("filesData empty.. cannot send screenshots")
-        except Exception as e:
-          print("Cannot send screenshots")
-          print(e)
-        #CLOUD SCREENSHOTS ENDS
-        try:
-          #Executions feedback
-          requests.post(url, json=values, headers=hed)
-          #requests.post(url, json=values, headers=hed, verify=False)
-
-          #save the executed test entry to the database
-          requests.post(supportRoute+"tracking_data", data={
-            'action': 3,
-            'userId': userId,
-            'organizationId': organizationId
-          })
-        except Exception as e:
-          print("Not connection to support Data Base")
-          print(e)
+        executeTest(dirname=dirname,browserName=browserName)
+        apiRequest.uploadImages(browserName=browserName)
+        apiRequest.sendFeedback(browserName=browserName,executionNumber=executionNumber)
+        apiRequest.sendTrackingData(3)
   else:
     print(field+': is not an allowed property')
 
@@ -256,6 +153,20 @@ def getBrowserName(browser):
   #select a browser from the list or return firefox as default
   return switcher.get(browser,"firefoxTest")
 
+def executeTest(dirname="", browserName="chromeTest"):
+  platform = Common.OSCheck()
+  slash="/"
+  if(platform=="Linux" or platform=="MacOS" or platform=="Darwin"):
+    os.system('chmod 544 ' + dirname + '/gradlew')
+  if(platform=="Windows"):
+    slash="\\"
+
+  try:
+    exitCode = subprocess.call(dirname + slash+'gradlew clean '+browserName, shell=True)
+  except Exception as e:
+    print("Error during gradlew compilation and/or execution ")
+    print(e)
+
 
 def main():
   parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
@@ -271,3 +182,4 @@ def main():
 
 if __name__=="__main__":
 	main()
+
