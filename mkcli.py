@@ -17,7 +17,6 @@ def run(args):
   config ={}
   try:
     config = Common.getConfig()
-    from CloudHelper import CloudHelper
   except Exception as ex:
     print("There is not config file on /config/config.json ",ex)
 
@@ -32,7 +31,7 @@ def run(args):
   
   #This options will be available for server running:
   if(config["onCloud"]):
-    from CloudHelper import CloudHelper
+    from .CloudHelper import CloudHelper
     executionNumber = args.executionnumber or None
     cloudHelper=CloudHelper(executionNumber)
     
