@@ -11,8 +11,6 @@ from utils.APIRequest import APIRequest
 
 
 def run(args):
-  
-
   #Gets the value from the flags
   config ={}
   try:
@@ -28,12 +26,6 @@ def run(args):
   route = 'src/test/groovy'
   browser = args.browser
   executionNumber = None
-  
-  #This options will be available for server running:
-  if(config["onCloud"]):
-    from .CloudHelper import CloudHelper
-    executionNumber = args.executionnumber or None
-    cloudHelper=CloudHelper(executionNumber)
     
   dimensions = args.dimensions
   if dimensions is not None:
@@ -46,10 +38,7 @@ def run(args):
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
 
-
-
   apiRequest=APIRequest()
-
 
   dirname = os.path.dirname(__file__)
   if dirname == "":
@@ -74,6 +63,12 @@ def run(args):
     print("Key file was not found on the repository (Download it from the Muuktest portal)")
     print (ex)
     exit(exitCode)
+
+  #This options will be available for server running:
+  if(config["onCloud"]):
+    from CloudHelper import CloudHelper
+    executionNumber = args.executionnumber or None
+    cloudHelper=CloudHelper(apiRequest.organizationId, executionNumber)
 
   allowed_fields = ['tag','name', 'hashtag']
   if field in allowed_fields:
@@ -197,6 +192,7 @@ def main():
   parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
   parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
   parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
+  parser.add_argument("-executionnumber",help="(Optional) this numbers contain the executionnumber from the cloud execution", type=str, dest="executionnumber")
   parser.set_defaults(func=run)
   args=parser.parse_args()
   args.func(args)
