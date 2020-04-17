@@ -1,0 +1,12 @@
+{
+  "prod": {
+    "route":"https://portal.muuktest.com:8081/",
+    "supportRoute":"https://testing.muuktest.com:8082/"
+  },
+  "dev":{
+    "route":"https://localhost:8081/",
+    "supportRoute":"https://localhost:8082/"
+  },
+  "env":"prod",
+  "onCloud": false
+}

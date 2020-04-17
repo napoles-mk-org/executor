@@ -2,21 +2,19 @@ import requests
 import urllib
 from urllib import request
 import ssl
+from .Common import Common
 
 class RequestUtil:
-  prodRoute = 'https://portal.muuktest.com:8081/'
-  prodSupportRoute = 'https://testing.muuktest.com:8082/'
-  devRoute = 'https://localhost:8081/'
-  devSupportRoute = 'https://localhost:8082/'
 
-  def __init__(self, env):
-    self.env = env
-    if env == "prod": 
-      self.route = self.prodRoute 
-      self.supportRoute = self.prodSupportRoute 
+  def __init__(self):
+    conf = Common.getConfig() 
+    self.env = conf["env"]
+    if self.env == "prod": 
+      self.route = conf["prod"]["route"] 
+      self.supportRoute = conf["prod"]["supportRoute"]
     else: 
-      self.route = self.devRoute
-      self.supportRoute = self.devSupportRoute 
+      self.route = conf["dev"]["route"] 
+      self.supportRoute = conf["dev"]["supportRoute"]
   
   def urllibRequest(self,url=None,path=None, headers=None,values=None,  json=None,token=None):
     context=None

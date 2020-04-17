@@ -2,44 +2,53 @@ import argparse
 import shutil
 import os
 import subprocess
-from urllib import request
-import requests
 import json
-import urllib
 import xml.etree.ElementTree
 from time import strftime
-from mkcloud import gatherScreenshots, resizeImages
 from utils.Common import Common
 from utils.RequestUtil import RequestUtil
 from utils.APIRequest import APIRequest
-import ssl
 
 
 def run(args):
+  
+
   #Gets the value from the flags
+  config ={}
+  try:
+    config = Common.getConfig()
+    from CloudHelper import CloudHelper
+  except Exception as ex:
+    print("There is not config file on /config/config.json ",ex)
+
+
   print("Starting process")
   field = args.field
   value = args.value
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  executionNumber = None
+  
+  #This options will be available for server running:
+  if(config["onCloud"]):
+    from CloudHelper import CloudHelper
+    executionNumber = args.executionnumber or None
+    cloudHelper=CloudHelper(executionNumber)
+    
   dimensions = args.dimensions
   if dimensions is not None:
     checkDimensions = isinstance(dimensions[0], int) & isinstance(dimensions[1],int)
   else:
     checkDimensions = False
 
-  executionNumber = None
   #Exit code to report at circleci
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  # muuktestRoute = 'https://portal.muuktest.com:8081/'
-  # supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  muuktestRoute = 'https://localhost:8081/'
-  supportRoute = 'https://localhost:8082/'
+
   apiRequest=APIRequest()
 
 
@@ -54,7 +63,7 @@ def run(args):
   valueArr = []
   valueArr.append(value)
 
-  #Getting the bearer token
+  # Getting the bearer token
   path = dirname + '/key.pub'
   token=''
   try:
@@ -67,15 +76,12 @@ def run(args):
     print (ex)
     exit(exitCode)
 
-  auth = {'Authorization': 'Bearer ' + token}
-
   allowed_fields = ['tag','name', 'hashtag']
   if field in allowed_fields:
     print("Downloading test")
     #Delete the old files
     if os.path.exists("test.rar"):
       os.remove('test.rar')
-
 
     if os.path.exists(route):
       print("copy dir")
@@ -85,16 +91,18 @@ def run(args):
       shutil.copytree(route, dest)
       shutil.copytree("build/", dest+"/build")
       shutil.rmtree(route, ignore_errors=True)
+      if(config["onCloud"]):
+        cloudHelper.backupVideo("bckSrc/"+folderName)
     os.makedirs(route)
 
-    values = {'property': field, 'value[]': valueArr, 'userId': userId}
+    values = {'property': field, 'value[]': valueArr}
     # Add screen dimension data if it is set as an argument
     if checkDimensions == True:
       values['dimensions'] = [dimensions[0],dimensions[1]]
 
     response = apiRequest.downloadByProperty(values)
 
-    #response = request.urlopen(url,data)
+    # response = request.urlopen(url,data)
     file = response.read()
     flag = False
 
@@ -111,7 +119,7 @@ def run(args):
       fileobj.write(file)
       fileobj.close()
 
-      #Unzip the file // the library needs the file to end in .rar for some reason
+      # Unzip the file // the library needs the file to end in .rar for some reason
       shutil.unpack_archive('test.zip', extract_dir=route, format='zip')
 
       if os.path.exists("src/test/groovy/executionNumber.execution"):
@@ -129,11 +137,24 @@ def run(args):
 
       if noexec == False :
         #Execute the test
-        print("Executing test...")
-        executeTest(dirname=dirname,browserName=browserName)
+        if(config["onCloud"]):
+          cloudHelper.startRecording()
+        
+        try:
+          print("Executing test...")
+          exitCode = executeTest(dirname=dirname,browserName=browserName)
+        except Exception as e:
+          print("Error during gradlew compilation and/or execution ")
+          print(e)
+          
+        if(config["onCloud"]):
+          cloudHelper.stopRecording()
+
         apiRequest.uploadImages(browserName=browserName)
         apiRequest.sendFeedback(browserName=browserName,executionNumber=executionNumber)
         apiRequest.sendTrackingData(3)
+        if(config["onCloud"]):
+          cloudHelper.uploadLogs(dirname,executionNumber,dest)
   else:
     print(field+': is not an allowed property')
 
@@ -154,6 +175,7 @@ def getBrowserName(browser):
   return switcher.get(browser,"firefoxTest")
 
 def executeTest(dirname="", browserName="chromeTest"):
+  exitCode=1
   platform = Common.OSCheck()
   slash="/"
   if(platform=="Linux" or platform=="MacOS" or platform=="Darwin"):
@@ -166,6 +188,7 @@ def executeTest(dirname="", browserName="chromeTest"):
   except Exception as e:
     print("Error during gradlew compilation and/or execution ")
     print(e)
+  return exitCode
 
 
 def main():

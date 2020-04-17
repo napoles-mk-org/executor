@@ -6,6 +6,7 @@ import os
 import json
 import urllib
 import xml.etree.ElementTree
+from .Common import Common
 
 class APIRequest:
 
@@ -14,8 +15,7 @@ class APIRequest:
     self.userId = ""
     self.organizationId = ""
     self.auth = {}
-    self.requestUtil=RequestUtil("dev")
-
+    self.requestUtil=RequestUtil()
 
   def generateToken(self,key):
     r = self.requestUtil.httpRequest(path="generate_token_executer", data={'key': key},requestType="post")
@@ -43,21 +43,25 @@ class APIRequest:
   
   def uploadImages(self,browserName=""):
     #CLOUD SCREENSHOTS STARTS #
-    resizeImages(browserName)
-    #cloudKey = getCloudKey()
+    resizeImages(browserName) 
     filesData = gatherScreenshots(browserName)
     try:
-      if filesData != {}:
-        # requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-        self.requestUtil.httpRequest(path='upload_cloud_steps_images/',
-         data={'cloudKey': cloudKey}, headers=hed, files = filesData,requestType="post")
+      if filesData != {}:        
+        if(Common.getConfig()["onCloud"]==True):
+          from .CloudHelper import CloudHelper 
+          cloudKey = CloudHelper.getCloudKey()
+          self.requestUtil.httpRequest(path='upload_cloud_steps_images/',
+          data={'cloudKey': cloudKey}, headers=self.auth, files = filesData,requestType="post")
+        else:
+          self.requestUtil.httpRequest(path='upload_cloud_steps_images/',
+          headers=self.auth, files = filesData,requestType="post")
       else:
         print ("filesData empty.. cannot send screenshots")
     except Exception as e:
       print("Cannot send screenshots")
       print(e)
 
-  def sendFeedback(self,browserName=None, executionNumber=None):
+  def sendFeedback(self,browserName="", executionNumber=None):
     testsExecuted = self.gatherFeedbackData(browserName)
     url = 'feedback/'
     values = {'tests': testsExecuted, 'userId': self.userId, 'browser': browserName,'executionNumber': executionNumber}
@@ -71,7 +75,8 @@ class APIRequest:
 
   def downloadByProperty(self,values):
     # This route downloads the scripts by the property.
-    url = 'download_byproperty/'  
+    url = 'download_byproperty/'
+    values["userId"]=self.userId
     response = self.requestUtil.urllibRequest(path=url,headers=self.auth, values=values,token=self.token )
     return response
   
