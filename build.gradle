@@ -33,6 +33,7 @@ dependencies {
 
     // If using JUnit, need to depend on geb-junit (3 or 4)
     testCompile "org.gebish:geb-junit4:$gebVersion"
+    testCompile 'io.github.http-builder-ng:http-builder-ng-core:1.0.4'
 
     // Drivers
     testCompile "org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion"
