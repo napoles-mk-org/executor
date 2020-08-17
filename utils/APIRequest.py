@@ -47,14 +47,10 @@ class APIRequest:
     filesData = gatherScreenshots(browserName)
     try:
       if filesData != {}:        
-        if(Common.getConfig()["onCloud"]==True):
-          from .CloudHelper import CloudHelper 
-          cloudKey = CloudHelper.getCloudKey()
-          self.requestUtil.httpRequest(path='upload_cloud_steps_images/',
-          data={'cloudKey': cloudKey}, headers=self.auth, files = filesData,requestType="post")
-        else:
-          self.requestUtil.httpRequest(path='upload_cloud_steps_images/',
-          headers=self.auth, files = filesData,requestType="post")
+          # from .CloudHelper import CloudHelper 
+          # cloudKey = CloudHelper.getCloudKey()
+        self.requestUtil.httpRequest(path='upload_cloud_steps_images/',
+        headers=self.auth, files = filesData,requestType="post")
       else:
         print ("filesData empty.. cannot send screenshots")
     except Exception as e:

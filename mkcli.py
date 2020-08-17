@@ -66,9 +66,9 @@ def run(args):
 
   #This options will be available for server running:
   if(config["onCloud"]):
-    from CloudHelper import CloudHelper
+  #   from CloudHelper import CloudHelper
     executionNumber = args.executionnumber or None
-    cloudHelper=CloudHelper(apiRequest.organizationId, executionNumber)
+  #   cloudHelper=CloudHelper(apiRequest.organizationId, executionNumber)
 
   allowed_fields = ['tag','name', 'hashtag']
   if field in allowed_fields:
@@ -85,8 +85,8 @@ def run(args):
       shutil.copytree(route, dest)
       shutil.copytree("build/", dest+"/build")
       shutil.rmtree(route, ignore_errors=True)
-      if(config["onCloud"]):
-        cloudHelper.backupVideo("bckSrc/"+folderName)
+    # if(config["onCloud"]):
+    #     cloudHelper.backupVideo("bckSrc/"+folderName)
     os.makedirs(route)
 
     values = {'property': field, 'value[]': valueArr}
@@ -129,26 +129,26 @@ def run(args):
 
       apiRequest.sendTrackingData(2)
 
-      if noexec == False :
+      # if noexec == False :
         #Execute the test
-        if(config["onCloud"]):
-          cloudHelper.startRecording()
+        # if(config["onCloud"]):
+        #   cloudHelper.startRecording()
         
-        try:
-          print("Executing test...")
-          exitCode = executeTest(dirname=dirname,browserName=browserName)
-        except Exception as e:
-          print("Error during gradlew compilation and/or execution ")
-          print(e)
+      try:
+        print("Executing test...")
+        exitCode = executeTest(dirname=dirname,browserName=browserName)
+      except Exception as e:
+        print("Error during gradlew compilation and/or execution ")
+        print(e)
           
-        if(config["onCloud"]):
-          cloudHelper.stopRecording()
+        # if(config["onCloud"]):
+        #   cloudHelper.stopRecording()
 
-        apiRequest.uploadImages(browserName=browserName)
-        apiRequest.sendFeedback(browserName=browserName,executionNumber=executionNumber)
-        apiRequest.sendTrackingData(3)
-        if(config["onCloud"]):
-          cloudHelper.uploadLogs(dirname,executionNumber,dest)
+      apiRequest.uploadImages(browserName=browserName)
+      apiRequest.sendFeedback(browserName=browserName,executionNumber=executionNumber)
+      apiRequest.sendTrackingData(3)
+        # if(config["onCloud"]):
+        #   cloudHelper.uploadLogs(dirname,executionNumber,dest)
   else:
     print(field+': is not an allowed property')
 
