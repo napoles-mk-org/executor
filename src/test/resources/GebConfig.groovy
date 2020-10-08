@@ -14,7 +14,10 @@ environments {
   // run via “./gradlew chromeTest”
   // See: http://code.google.com/p/selenium/wiki/ChromeDriver
   chrome {
-    driver = { new ChromeDriver() }
+    ChromeOptions o = new ChromeOptions()
+    o.addArguments('--no-sandbox');
+    o.addArguments('--disable-dev-shm-usage');
+    driver = { new ChromeDriver(o) }
   }
 
   // run via “./gradlew chromeHeadlessTest”
