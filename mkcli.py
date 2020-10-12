@@ -7,6 +7,7 @@ import requests
 import json
 import urllib
 import xml.etree.ElementTree
+import mkvideo
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
 #import ssl
@@ -197,13 +198,19 @@ def run(args):
 
       if noexec == False :
         #Execute the test
+        videoNameFile = str(organizationId) + "_" + str(executionNumber) + ".mp4"
+        print("File name for video: " + videoNameFile)
         print("Executing test...")
         try:
+          v = Video()
+          v.checkAndStartRecording(videoNameFile)
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
         except Exception as e:
           print("Error during gradlew compilation and/or execution ")
           print(e)
 
+        v.checkAndStopRecording()
+        del v
         testsExecuted = gatherFeedbackData(browserName)
         url = muuktestRoute+'feedback/'
         values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
@@ -215,8 +222,13 @@ def run(args):
         filesData = gatherScreenshots(browserName)
         try:
           if filesData != {}:
+            print("Upload the screenshots: ")
             requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
             #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
+            print("Upload the Video: ")
+            videoFile = open(videoNameFile, 'rb')
+            files = {'file': videoFile}
+            requests.post(muuktestRoute + 'upload_video/', headers=hed, files=files)
           else:
             print ("filesData empty.. cannot send screenshots")
         except Exception as e:
