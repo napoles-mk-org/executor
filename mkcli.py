@@ -7,9 +7,9 @@ import requests
 import json
 import urllib
 import xml.etree.ElementTree
-import mkvideo
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
+from mkvideo import Video
 #import ssl
 
 def gatherFeedbackData(browserName):
