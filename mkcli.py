@@ -205,11 +205,14 @@ def run(args):
           v = Video()
           v.checkAndStartRecording(videoNameFile)
           v.checkActiveSession()
+          v.executeCmd("ps -ef | grep ffmpeg")
+          v.executeCmd("ps -ef | grep tmux")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
         except Exception as e:
           print("Error during gradlew compilation and/or execution ")
           print(e)
 
+        v.executeCmd("ps -ef | grep ffmpeg")
         v.checkAndStopRecording()
         del v
         testsExecuted = gatherFeedbackData(browserName)
