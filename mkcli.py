@@ -204,6 +204,7 @@ def run(args):
         try:
           v = Video()
           v.checkAndStartRecording(videoNameFile)
+          v.checkActiveSession()
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
         except Exception as e:
           print("Error during gradlew compilation and/or execution ")

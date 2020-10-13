@@ -21,11 +21,12 @@ environments {
       o.addArguments('--no-sandbox');
       o.addArguments('--disable-dev-shm-usage');
       o.addArguments("--ignore-certificate-errors");
-      DesiredCapabilities cap=DesiredCapabilities.chrome();
-      cap.setCapability(ChromeOptions.CAPABILITY, o);
-      cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
-      cap.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
-      new ChromeDriver(cap);
+      //DesiredCapabilities cap=DesiredCapabilities.chrome();
+      //cap.setCapability(ChromeOptions.CAPABILITY, o);
+      //cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+      //cap.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+      //new ChromeDriver(cap);
+      new ChromeDriver(o);
     }
   }
 
