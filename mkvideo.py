@@ -13,7 +13,7 @@ class Video:
   # starting the Xvfb  process (ie. Xvfb :99  1366x768x16)
   # FYI  TMUX reference: https://gist.github.com/henrik/1967800
   #
-  def __init__(self, port= ":99.0", dimension="1280x1024", nameFile = "default.mp4", session = "Muukrecording", input ="x11grab"):
+  def __init__(self, port= ":99.0", dimension="1366x768", nameFile = "default.mp4", session = "Muukrecording", input ="x11grab"):
     self.port = port
     self.dimension = dimension
     self.nameFile = nameFile

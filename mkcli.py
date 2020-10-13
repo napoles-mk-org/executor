@@ -213,8 +213,8 @@ def run(args):
           print(e)
 
         v.executeCmd("ps -ef | grep ffmpeg")
-        v.executeCmd("ls -ltr | grep *.mp4")
         v.checkAndStopRecording()
+        v.executeCmd("ls -ltr | grep *.mp4")
         del v
         testsExecuted = gatherFeedbackData(browserName)
         url = muuktestRoute+'feedback/'
