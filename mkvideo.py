@@ -138,6 +138,7 @@ class Video:
     result = ""
     if cmd != "" :
       try:
+        print("executeCmd - command received: ", cmd)
         result= subprocess.check_output(cmd, shell = True)
       except subprocess.CalledProcessError as notZero:
         print ("executeCmd - returned a non zero response , this means there was an error")
