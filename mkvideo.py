@@ -95,7 +95,7 @@ class Video:
     # The following command starts the recording creating a new TMUX session.
     # such session should not exist. All parameters are required and the -y
     # means that it will overwrite the file in case that exists.
-    cmd = "tmux new-session -d -s "+ self.session +"  'ffmpeg -video_size "+ self.dimension + " -framerate 25 -f "+self.input + "  -i "+self.port +" -y " + self.nameFile+"'"
+    cmd = "tmux new-session -d -s "+ self.session +"  'ffmpeg -video_size "+ self.dimension + " -framerate 25 -f "+self.input + " -threads 4 -i "+self.port +" -y " + self.nameFile+"'"
     print("startRecoring - start the recording : " , cmd)
 
     resStr = self.executeCmd(cmd)
