@@ -9,6 +9,7 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
+from zipfile import ZipFile
 #import ssl
 
 def gatherFeedbackData(browserName):
@@ -237,6 +238,26 @@ def run(args):
         except Exception as e:
           print("Not connection to support Data Base")
           print(e)
+        #LOGS
+        try:
+          zipObj = ZipFile('logs.zip', 'w')
+          zipObj.write('driver.log')
+          zipObj.write('browser.log')
+          zipObj.write('performance.log')
+          zipObj.write('detailed.log')
+          zipObj.close()
+
+          if os.path.exists('logs.zip'):
+            logFileName = 'logs.zip'
+            logFile = open(logFileName, 'rb')
+            files = {'file' : logFile}
+            requests.post( muuktestRoute + 'upload_logs/' , headers=hed, data={'origin': "executor", 'key': key, 'executionNumber': str(executionNumber)} , files=files, verify=False)
+          if os.path.exists("logs.zip"):
+            os.remove('logs.zip')
+        except Exception as e:
+          print("Error on logs uploading")
+          print(e)
+        #END OF LOGS
   else:
     print(field+': is not an allowed property')
 
