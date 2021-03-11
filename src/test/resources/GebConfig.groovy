@@ -62,19 +62,3 @@ environments {
 
 // To run the tests with all browsers just run “./gradlew test”
 baseUrl = "http://gebish.org"
-
-
- // DesiredCapabilities capabilities = DesiredCapabilities.chrome()
-      // ChromeOptions options = new ChromeOptions()
-      // options.setExperimentalOption("prefs", ["browser.custom_chrome_frame": false])
-      // capabilities.setCapability(ChromeOptions.CAPABILITY, options)
-      // LoggingPreferences logPrefs = new LoggingPreferences()
-      // logPrefs.enable(BROWSER, ALL)
-      // logPrefs.enable(PROFILER, ALL)
-      // logPrefs.enable(PERFORMANCE, ALL)
-      // logPrefs.enable(CLIENT, ALL)
-      // logPrefs.enable(DRIVER, ALL)
-      // logPrefs.enable(SERVER, ALL)
-
-      // capabilities.setCapability(LOGGING_PREFS, logPrefs)
-      // new ChromeDriver(capabilities) 
