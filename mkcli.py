@@ -9,7 +9,9 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-#import ssl
+import ssl
+from bs4 import BeautifulSoup
+import pprint
 
 def gatherFeedbackData(browserName):
   #The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -20,6 +22,7 @@ def gatherFeedbackData(browserName):
     for filename in os.listdir(path):
       testSuccess = True
       error = ''
+      failureMessage = ''
       if filename.endswith('.xml'):
         e = xml.etree.ElementTree.parse('build/test-results/'+browserName+'/' + filename).getroot()
 
@@ -30,7 +33,8 @@ def gatherFeedbackData(browserName):
           if e.find('testcase') is not None :
             if e.find('testcase').find('failure') is not None :
               error = e.find('testcase').find('failure').attrib['message']
-
+              failureMessage = e.find('testcase').find('failure').text
+  
         testResult = {
           "className": e.attrib['name'] if e.attrib['name'] is not None else "",
           "success": testSuccess,
@@ -38,12 +42,16 @@ def gatherFeedbackData(browserName):
           "hostname": e.attrib['hostname'] if e.attrib['hostname'] is not None else "",
           "executionTime": e.attrib['time'] if e.attrib['time'] is not None else "",
           "error":  error,
-          "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else ""
+          "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else "",
+          "systemerror":  e.find('system-err').text if e.find('system-err') is not None else "",
+          "failureMessage":  failureMessage,
         }
+        testResult["muukReport"] = createMuukReport(testResult.get("className"))
         feedbackData.append(testResult)
   else:
     print("gatherFeedbackData - path does not exists ")
     testResult = {
+      "muukReport": {},
       "success" : False,
       #"executionAt": "",
       "error" : "Test failed during execution. This could be compilation error",
@@ -53,6 +61,50 @@ def gatherFeedbackData(browserName):
 
   return(feedbackData)
 
+def obtainFeedbackFromDOM(classname, stepId, ntagselector):
+   path = 'build/reports/geb/firefoxTest/'
+   filename = path + classname + "_" + str(stepId) + ".html"
+   domData = {}
+   parents = []
+   if os.path.exists(filename):
+     try:
+       text = open(filename, 'r').read()
+       soup = BeautifulSoup(text, 'html.parser')
+       selectors = soup.select(ntagselector)
+       domData["numberOfElementsWithSameSelector"] = len(selectors)
+       #domData["elementsWithSameSelector"] = selectors
+       for selector in selectors:
+             parents.append(selector.parent)
+       domData["elementsWithSameSelectorAndParents"] = parents
+     except Exception as ex:
+       print("Failed to open file " + filename)
+       print (ex)
+ 
+   return domData
+            
+         
+def createMuukReport(classname):
+   path = 'build/reports/'
+   filename = path + classname + ".json"
+   muukReport = {}
+   steps = []
+   if(os.path.exists(filename)):
+      try:
+        jsonFile = open(filename, 'r')
+        elements = json.load(jsonFile)
+        for element in elements['stepsFeedback']:
+          domInfo = obtainFeedbackFromDOM(classname, element.get("id"), element.get("selector"))
+          element["numberOfElementsWithSameSelector"] = domInfo.get("numberOfElementsWithSameSelector")
+          element["elementsWithSameSelectorAndParents"] = str(domInfo.get("elementsWithSameSelectorAndParents")) 
+          steps.append(element)
+      except ValueError as err:
+          print("Invalid json file found")    
+      
+      # Closing file
+      jsonFile.close()
+
+   muukReport["steps"] = steps
+   return muukReport
 
 def run(args):
   #Gets the value from the flags
