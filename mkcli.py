@@ -10,8 +10,7 @@ import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
 import ssl
-from bs4 import BeautifulSoup
-import pprint
+from domparser import createMuukReport
 
 def gatherFeedbackData(browserName):
   #The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -60,51 +59,6 @@ def gatherFeedbackData(browserName):
     feedbackData.append(testResult)
 
   return(feedbackData)
-
-def obtainFeedbackFromDOM(classname, stepId, ntagselector):
-   path = 'build/reports/geb/firefoxTest/'
-   filename = path + classname + "_" + str(stepId) + ".html"
-   domData = {}
-   parents = []
-   if os.path.exists(filename):
-     try:
-       text = open(filename, 'r').read()
-       soup = BeautifulSoup(text, 'html.parser')
-       selectors = soup.select(ntagselector)
-       domData["numberOfElementsWithSameSelector"] = len(selectors)
-       #domData["elementsWithSameSelector"] = selectors
-       for selector in selectors:
-             parents.append(selector.parent)
-       domData["elementsWithSameSelectorAndParents"] = parents
-     except Exception as ex:
-       print("Failed to open file " + filename)
-       print (ex)
- 
-   return domData
-            
-         
-def createMuukReport(classname):
-   path = 'build/reports/'
-   filename = path + classname + ".json"
-   muukReport = {}
-   steps = []
-   if(os.path.exists(filename)):
-      try:
-        jsonFile = open(filename, 'r')
-        elements = json.load(jsonFile)
-        for element in elements['stepsFeedback']:
-          domInfo = obtainFeedbackFromDOM(classname, element.get("id"), element.get("selector"))
-          element["numberOfElementsWithSameSelector"] = domInfo.get("numberOfElementsWithSameSelector")
-          element["elementsWithSameSelectorAndParents"] = str(domInfo.get("elementsWithSameSelectorAndParents")) 
-          steps.append(element)
-      except ValueError as err:
-          print("Invalid json file found")    
-      
-      # Closing file
-      jsonFile.close()
-
-   muukReport["steps"] = steps
-   return muukReport
 
 def run(args):
   #Gets the value from the flags
