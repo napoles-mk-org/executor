@@ -9,16 +9,16 @@ NO_TAG_PROVIDED_BY_BE = 2
 NO_VALUE_PROVIDED_BY_BE = 3
 NO_SEARCH_TYPE_PROVIDED_BY_BE = 4
 ACTION_NOT_VALID_FOR_ANALYSIS = 5
-STEP_INDEX_GREATER_THAN_SELECTORS_FOUND = 6
+STEP_INDEX_GREATER_THAN_NUMBER_OF_SELECTORS_FOUND = 6
 ONE_SELECTOR_FOUND_FOR_NTAGSELECTOR = 7
 NO_SELECTOR_FOUND_WITH_SPECIFIC_VALUE = 8  
 SELECTOR_FOUND_WITH_CORRECT_INDEX = 9
 SELECTOR_FOUND_WITH_INCORRECT_INDEX = 10  
-MULTIPLE_SELECTORS_FOUND_WITH_EXPCTED_VALUE_CORRECT_INDEX = 11 
-MULTIPLE_SELECTORS_FOUND_WITH_EXPCTED_VALUE_INCORRECT_INDEX = 12
+MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_CORRECT_INDEX = 11 
+MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_INCORRECT_INDEX = 12
 
 
-def processResults(selectors, expectedIndex, selectorsFound, selectorIndexes, attribute):
+def processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, attribute):
    jsonObject = {}
    elements = []
 
@@ -91,7 +91,7 @@ def processResults(selectors, expectedIndex, selectorsFound, selectorIndexes, at
             element["value"] = selectors[expectedIndex][attribute]
          element["selector"] = "original"
          elements.append(element) 
-         returnCode = MULTIPLE_SELECTORS_FOUND_WITH_EXPCTED_VALUE_CORRECT_INDEX
+         returnCode = MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_CORRECT_INDEX
       else:
          print("The expected element " + str(expectedIndex) + " was NOT found on the selectors")
          element = {}
@@ -105,13 +105,13 @@ def processResults(selectors, expectedIndex, selectorsFound, selectorIndexes, at
 
          element = {}
          if(attribute == "text"):
-            element["value"] = selectors[expectedIndex].text
+            element["value"] = expectedValue
          else:   
-            element["value"] = selectors[expectedIndex][attribute]
+            element["value"] = expectedValue
          element["index"] = str(selectorIndexes)   
          element["selector"] = "found"
          elements.append(element) 
-         returnCode = MULTIPLE_SELECTORS_FOUND_WITH_EXPCTED_VALUE_INCORRECT_INDEX
+         returnCode = MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_INCORRECT_INDEX
 
    jsonObject["numberOfElementsWithSameSelectorAndValue"] = selectorsFound   
    jsonObject["selectors"] = elements
@@ -137,7 +137,7 @@ def parseTextSelector(selectors, expectedValue, expectedIndex):
          selectorIndexes.append(counter)
       counter+=1   
    
-   return processResults(selectors, expectedIndex, selectorsFound, selectorIndexes, "text")
+   return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "text")
 
 
 def parseImageSelector(selectors, expectedValue, expectedIndex):
@@ -150,7 +150,7 @@ def parseImageSelector(selectors, expectedValue, expectedIndex):
          selectorIndexes.append(counter)
       counter+=1   
 
-   return processResults(selectors, expectedIndex, selectorsFound, selectorIndexes, "src")
+   return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "src")
 
 #
 # This method will be called when two or more selectors are found with . 
@@ -176,7 +176,7 @@ def parseHypertextSelector(selectors, expectedValue, expectedIndex):
             selectorIndexes.append(counter)
       counter+=1   
    
-   return processResults(selectors, expectedIndex, selectorsFound, selectorIndexes, "href")
+   return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "href")
 
 
 def parseValueSelector(selectors, expectedValue, expectedIndex, type):
@@ -191,7 +191,7 @@ def parseValueSelector(selectors, expectedValue, expectedIndex, type):
          selectorIndexes.append(counter)
       counter+=1   
    
-   jsonObject = processResults(selectors, expectedIndex, selectorsFound, selectorIndexes, "value")
+   jsonObject = processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "value")
 
    return jsonObject
 
@@ -206,14 +206,15 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
    if os.path.exists(filename):
       try:
          print("\n============= Step " + str(stepId) + "=============")
+
+         if(stepId == 6):
+          index = 2 
+
          print("Tag " + tag)
          print("Search by " + searchType)
          print("index " + str(index))
          print("action " + str(action))
 
-         #if(stepId != 7):
-          #return 
-         
          text = open(filename, 'r').read()
          soup = BeautifulSoup(text, 'html.parser')
          selectorsFound = soup.select(ntagselector)
@@ -223,7 +224,7 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
 
          if(index > numberSelectorsFound):
             jsonObject["selectors"] = []
-            jsonObject["rc"] = STEP_INDEX_GREATER_THAN_SELECTORS_FOUND  
+            jsonObject["rc"] = STEP_INDEX_GREATER_THAN_NUMBER_OF_SELECTORS_FOUND  
             jsonObject["numberOfElementsWithSameSelectorAndValue"] = 0
          elif(action == "assignment" or action == "mouseover"):
             jsonObject["selectors"] = []
@@ -254,7 +255,7 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
                element["selector"] = "original"
                elements.append(element)
                jsonObject["selectors"] = elements
-               jsonObject["numberOfElementsWithSameSelectorAndValue"] = 0
+               jsonObject["numberOfElementsWithSameSelectorAndValue"] = numberSelectorsFound
                jsonObject["rc"] = ONE_SELECTOR_FOUND_FOR_NTAGSELECTOR
 
          jsonObject["numberOfElementsWithSameSelector"] = numberSelectorsFound
@@ -302,4 +303,4 @@ def createMuukReport(classname):
 
    return muukReport
 
-#createMuukReport("devFushosoftCom86e660e3") 
+createMuukReport("devFushosoftCom86e660e3") 
