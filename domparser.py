@@ -296,11 +296,9 @@ def createMuukReport(classname):
           print("Exception found during DOM parsing. Exception = " + str(ex))     
       
       # Closing file
-   jsonFile.close()
+      jsonFile.close()
 
    muukReport["steps"] = steps
    pprint.pprint(steps)
 
    return muukReport
-
-#createMuukReport("devFushosoftCom86e660e3") 
