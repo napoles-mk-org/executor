@@ -197,18 +197,15 @@ def parseValueSelector(selectors, expectedValue, expectedIndex, type):
 
 
 
-def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, type, action, searchType):
+def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, type, action, searchType, browserName):
    jsonObject = {}
    elements = []    
-   path = 'build/reports/geb/firefoxTest/'
+   path = 'build/reports/geb/' + browserName + '/'
    filename = path + classname + "_" + str(stepId) + ".html"
 
    if os.path.exists(filename):
       try:
          print("\n============= Step " + str(stepId) + "=============")
-
-         if(stepId == 6):
-          index = 2 
 
          print("Tag " + tag)
          print("Search by " + searchType)
@@ -268,7 +265,8 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
    return jsonObject
 
 
-def createMuukReport(classname):
+def createMuukReport(classname, browserName):
+   print("starting Muuk Report on " + str(browserName))
    path = 'build/reports/'
    filename = path + classname + ".json"
    muukReport = {}
@@ -284,7 +282,8 @@ def createMuukReport(classname):
                                           element.get("index"), element.get("tag"),
                                           element.get("objectType"),
                                           element.get("action"),
-                                          valueData["searchType"])
+                                          valueData["searchType"],
+                                          browserName)
           if(domInfo):                                
             element["numberOfElementsWithSameSelector"] = domInfo["numberOfElementsWithSameSelector"]
             element["numberOfElementsWithSameSelectorAndValue"] = domInfo["numberOfElementsWithSameSelectorAndValue"]
@@ -297,6 +296,8 @@ def createMuukReport(classname):
       
       # Closing file
       jsonFile.close()
+   else:
+      print("Muuk Report does not exists!")   
 
    muukReport["steps"] = steps
    pprint.pprint(steps)
