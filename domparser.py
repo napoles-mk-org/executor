@@ -16,6 +16,7 @@ SELECTOR_FOUND_WITH_CORRECT_INDEX = 9
 SELECTOR_FOUND_WITH_INCORRECT_INDEX = 10  
 MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_CORRECT_INDEX = 11 
 MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_INCORRECT_INDEX = 12
+NO_SELECTOR_FOUND_WITH_NTAGSELECTOR = 13
 
 
 def processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, attribute):
@@ -153,7 +154,7 @@ def parseImageSelector(selectors, expectedValue, expectedIndex):
    return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "src")
 
 #
-# This method will be called when two or more selectors are found with . 
+# This method will be called when two or more selectors are found with
 # the same ntagselector value. This method will use the expected value (href) 
 # to filter the selctors and try to find the one that was used by the test.
 # 
@@ -178,7 +179,11 @@ def parseHypertextSelector(selectors, expectedValue, expectedIndex):
    
    return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "href")
 
-
+#
+# This method will be called when two or more selectors are found with
+# the same ntagselector value. This method will use the expected value  
+# to filter the selctors and try to find the one that was used by the test.
+# 
 def parseValueSelector(selectors, expectedValue, expectedIndex, type):
    jsonObject = {}
    selectorIndexes = []
@@ -230,6 +235,8 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
          else:  
             if(numberSelectorsFound == 0 ):
                jsonObject["selectors"] = []
+               jsonObject["numberOfElementsWithSameSelectorAndValue"] = 0
+               jsonObject["rc"] = NO_SELECTOR_FOUND_WITH_NTAGSELECTOR
             elif(numberSelectorsFound > 1 ):
                if(searchType == "value"):
                   jsonObject = parseValueSelector(selectorsFound, value, index, type)
@@ -272,7 +279,7 @@ def createMuukReport(classname, browserName):
    muukReport = {}
    steps = []
    if(os.path.exists(filename)):
-      try:
+      #try:
         jsonFile = open(filename, 'r')
         elements = json.load(jsonFile)
         for element in elements['stepsFeedback']:
@@ -291,11 +298,11 @@ def createMuukReport(classname, browserName):
             element["selectors"] = domInfo["selectors"]
             steps.append(element)
 
-      except Exception as ex:
-          print("Exception found during DOM parsing. Exception = " + str(ex))     
+      #except Exception as ex:
+          #print("Exception found during DOM parsing. Exception = " + str(ex))     
       
       # Closing file
-      jsonFile.close()
+        jsonFile.close()
    else:
       print("Muuk Report does not exists!")   
 
