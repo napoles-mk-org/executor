@@ -19,24 +19,31 @@ MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_INCORRECT_INDEX = 12
 NO_SELECTOR_FOUND_WITH_NTAGSELECTOR = 13
 
 
+# Description:
+#   This method will be called to handle the result of filter operation done  
+#   on the selectors found.
+#   
+#   There are 3 options for the result:
+#    1) No selectors were found having the value we are expecting. On this case,
+#       information returned will be the element with the index that was expected.
+#
+#    2) We found only one selector, we have two options here:
+#       a) Found the correct selector: Return the original element.
+#       b) Found the incorrect selector. Return two elements, one with the original index and other with the found index.
+# 
+#    3) We found two or more selectors with the same src. We have two options here:
+#       a) The correct selector was found. Return the original element. 
+#       b) The correct selector was not found. Return two elements, one with the original index and other with all the indexes found.
+#   
+# Returns:
+#    jsonObject with the number of selectors found, the selctors and the return code. 
+#
 def processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, attribute):
    jsonObject = {}
    elements = []
 
-   # After we filter the selectors we have 3 options:
-   # 1) No selectors were found having the value we are expecting. On this case,
-   #    information returned will be the element with the index that was expected.
-   #
-   # 2) We found only one selector, we have two options here:
-   #    a) Found the correct selector: Return the original element.
-   #    b) Found the incorrect selector. Return two elements, one with the original index and other with the found index.
-   # 
-   # 3) We found two or more selectors with the same src. We have two options here:
-   #    a) The correct selector was found. Return the original element. 
-   #    b) The correct selector was not found. Return two elements, one with the original index and other with all the indexes found.
-   #    
    if(selectorsFound == 0):
-      print("No selectors were found with the expected src!!!")
+      # No selectors were found with the expected value
       element = {}
       element["index"] = expectedIndex
       if(attribute == "text"):
@@ -48,7 +55,7 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
       returnCode = NO_SELECTOR_FOUND_WITH_SPECIFIC_VALUE
    elif(selectorsFound == 1):
       if(expectedIndex in selectorIndexes):
-         print("The expected selector was found and it is the only selector.")
+        # The expected selector was found and it is the only selector.
          element = {}
          element["index"] = expectedIndex
          if(attribute == "text"):
@@ -59,9 +66,7 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
          elements.append(element) 
          returnCode = SELECTOR_FOUND_WITH_CORRECT_INDEX
       else:
-         # The expected selector was not found, we need to return the original selector (using expected index)
-         #  and the found selector.
-         print("The incorrect selector was found and this is the only selector with the expected src")
+         # The incorrect selector was found and this is the only selector with the expected value
          element = {}
          element["index"] = expectedIndex
          if(attribute == "text"):
@@ -81,9 +86,9 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
          elements.append(element) 
          returnCode = SELECTOR_FOUND_WITH_INCORRECT_INDEX
    elif(selectorsFound > 1):
-      print("Several selectors were found with same src " + str(selectorIndexes)) 
+      # Several selectors were found with same value
       if(expectedIndex in selectorIndexes):
-         print("The expected element " + str(expectedIndex) + " was found on the selectors")
+         # The expected element was found on the selectors
          element = {}
          element["index"] = expectedIndex
          if(attribute == "text"):
@@ -94,7 +99,7 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
          elements.append(element) 
          returnCode = MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_CORRECT_INDEX
       else:
-         print("The expected element " + str(expectedIndex) + " was NOT found on the selectors")
+         # The expected element was NOT found on the selectors
          element = {}
          if(attribute == "text"):
             element["value"] = selectors[expectedIndex].text
@@ -120,10 +125,22 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
 
    return jsonObject
 
+# Description:
+#   This method will be called when two or more selectors were found with
+#   the same ntagselector value. This method will use the text value attribute  
+#   to filter the selctors and try to find the one that was used by the test.
+#
+# Parameters: 
+#    selectors: Array of selectors found with the same ntagselector.
+#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    expectedIndex: The index that is expected to contain the expected value. 
+# 
+# Returns:
+#    jsonObject with the number of selectors found, the selctors and the return code. 
 def parseTextSelector(selectors, expectedValue, expectedIndex):
    jsonObject = {}
    selectorIndexes = []
-   counter = 0
+   selectorIndex = 0
    selectorsFound = 0
 
    if(expectedValue == ""):
@@ -135,33 +152,51 @@ def parseTextSelector(selectors, expectedValue, expectedIndex):
    for selector in selectors:
       if((selector.text).strip() == expectedValue.strip()):
          selectorsFound += 1
-         selectorIndexes.append(counter)
-      counter+=1   
+         selectorIndexes.append(selectorIndex)
+      selectorIndex+=1   
    
    return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "text")
 
-
+# Description:
+#   This method will be called when two or more selectors were found with
+#   the same ntagselector value. This method will use the src value attribute  
+#   to filter the selctors and try to find the one that was used by the test.
+#
+# Parameters: 
+#    selectors: Array of selectors found with the same ntagselector.
+#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    expectedIndex: The index that is expected to contain the expected value. 
+# 
+# Returns:
+#    jsonObject with the number of selectors found, the selctors and the return code. 
 def parseImageSelector(selectors, expectedValue, expectedIndex):
    selectorIndexes = []
-   counter = 0
+   selectorIndex = 0
    selectorsFound = 0
    for selector in selectors:
       if(selector['src'] == expectedValue ):
          selectorsFound += 1
-         selectorIndexes.append(counter)
-      counter+=1   
+         selectorIndexes.append(selectorIndex)
+      selectorIndex+=1   
 
    return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "src")
 
+# Description:
+#   This method will be called when two or more selectors were found with
+#   the same ntagselector value. This method will use the href value attribute  
+#   to filter the selctors and try to find the one that was used by the test.
 #
-# This method will be called when two or more selectors are found with
-# the same ntagselector value. This method will use the expected value (href) 
-# to filter the selctors and try to find the one that was used by the test.
+# Parameters: 
+#    selectors: Array of selectors found with the same ntagselector.
+#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    expectedIndex: The index that is expected to contain the expected value. 
 # 
+# Returns:
+#    jsonObject with the number of selectors found, the selctors and the return code. 
 def parseHypertextSelector(selectors, expectedValue, expectedIndex):
    jsonObject = {}
    selectorIndexes = []
-   counter = 0
+   selectorIndex = 0
    selectorsFound = 0
 
    if(expectedValue == ""):
@@ -174,34 +209,45 @@ def parseHypertextSelector(selectors, expectedValue, expectedIndex):
       if(selector and selector.has_attr('href')):
          if(selector['href'] == expectedValue):
             selectorsFound += 1
-            selectorIndexes.append(counter)
-      counter+=1   
+            selectorIndexes.append(selectorIndex)
+      selectorIndex+=1   
    
    return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "href")
 
+# Description:
+#   This method will be called when two or more selectors were found with
+#   the same ntagselector value. This method will use the value attribute  
+#   to filter the selctors and try to find the one that was used by the test.
 #
-# This method will be called when two or more selectors are found with
-# the same ntagselector value. This method will use the expected value  
-# to filter the selctors and try to find the one that was used by the test.
+# Parameters: 
+#    selectors: Array of selectors found with the same ntagselector.
+#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    expectedIndex: The index that is expected to contain the expected value. 
 # 
+# Returns:
+#    jsonObject with the number of selectors found, the selctors and the return code. 
 def parseValueSelector(selectors, expectedValue, expectedIndex, type):
    jsonObject = {}
    selectorIndexes = []
-   counter = 0
+   selectorIndex = 0
    selectorsFound = 0
 
    for selector in selectors:
       if(selector['value'] == expectedValue ):
          selectorsFound += 1
-         selectorIndexes.append(counter)
-      counter+=1   
-   
-   jsonObject = processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "value")
+         selectorIndexes.append(selectorIndex)
+      selectorIndex+=1   
 
-   return jsonObject
+   return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "value")
 
-
-
+# Description:
+#   This method will be call for each step and will parse the DOM files generated  
+#   for the test to find the selectors for this step. If more than one selector is found,  
+#   this method makes another search on the DOM using the value to filter the 
+#   selectors found. 
+#
+# Returns:
+#    jsonObject with the number of selector information. 
 def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, type, action, searchType, browserName):
    jsonObject = {}
    elements = []    
@@ -210,19 +256,10 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
 
    if os.path.exists(filename):
       try:
-         print("\n============= Step " + str(stepId) + "=============")
-
-         print("Tag " + tag)
-         print("Search by " + searchType)
-         print("index " + str(index))
-         print("action " + str(action))
-
          text = open(filename, 'r').read()
          soup = BeautifulSoup(text, 'html.parser')
          selectorsFound = soup.select(ntagselector)
-         #print("Selectors: " + str(selectorsFound))
          numberSelectorsFound = len(selectorsFound)
-         print("Selectors found: " + str(numberSelectorsFound))
 
          if(index > numberSelectorsFound):
             jsonObject["selectors"] = []
@@ -257,14 +294,21 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
                element["index"] = index
                element["value"] = value
                element["selector"] = "original"
+               if(searchType == "value"):
+                  element["value"] = selectorsFound[0]["value"]
+               elif(searchType == "href"):   
+                  element["value"] = selectorsFound[0]["href"]
+               elif(searchType == "text"):
+                  element["value"] = selectorsFound[0].text
+               elif(searchType == "imgsrc"):
+                  element["value"] = selectorsFound[0]["src"]
                elements.append(element)
                jsonObject["selectors"] = elements
                jsonObject["numberOfElementsWithSameSelectorAndValue"] = numberSelectorsFound
                jsonObject["rc"] = ONE_SELECTOR_FOUND_FOR_NTAGSELECTOR
 
          jsonObject["numberOfElementsWithSameSelector"] = numberSelectorsFound
-         pprint.pprint(jsonObject)
-         print("==============================================")  
+
       except Exception as ex:
          print("Failed to open file " + ex)
          print (ex)
@@ -272,14 +316,21 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
    return jsonObject
 
 
+# Description:
+#   This method will be call to execuete the Muuk Report analysis.  
+#   for the test to find the selectors for this step. If more than one selector is found,  
+#   this method makes another search on the DOM using the value to filter the 
+#   selectors found. 
+#
+# Returns:
+#    jsonObject with the number of selector information. 
 def createMuukReport(classname, browserName):
-   print("starting Muuk Report on " + str(browserName))
    path = 'build/reports/'
    filename = path + classname + ".json"
    muukReport = {}
    steps = []
    if(os.path.exists(filename)):
-      #try:
+      try:
         jsonFile = open(filename, 'r')
         elements = json.load(jsonFile)
         for element in elements['stepsFeedback']:
@@ -287,8 +338,7 @@ def createMuukReport(classname, browserName):
           domInfo = obtainFeedbackFromDOM(classname, element.get("id"), 
                                           element.get("selector"), valueData["value"], 
                                           element.get("index"), element.get("tag"),
-                                          element.get("objectType"),
-                                          element.get("action"),
+                                          element.get("objectType"), element.get("action"), 
                                           valueData["searchType"],
                                           browserName)
           if(domInfo):                                
@@ -298,15 +348,18 @@ def createMuukReport(classname, browserName):
             element["selectors"] = domInfo["selectors"]
             steps.append(element)
 
-      #except Exception as ex:
-          #print("Exception found during DOM parsing. Exception = " + str(ex))     
+      except Exception as ex:
+          print("Exception found during DOM parsing. Exception = " + str(ex))     
       
       # Closing file
-        jsonFile.close()
+      jsonFile.close()
    else:
-      print("Muuk Report does not exists!")   
+      print("Muuk Report was not found!")   
 
    muukReport["steps"] = steps
-   pprint.pprint(steps)
+
+   # Print report if touch file exists
+   if(os.path.exists("TOUCH_TRACE_REPORT")):
+     pprint.pprint(steps)
 
    return muukReport
