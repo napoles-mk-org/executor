@@ -334,19 +334,23 @@ def createMuukReport(classname, browserName):
         jsonFile = open(filename, 'r')
         elements = json.load(jsonFile)
         for element in elements['stepsFeedback']:
-          valueData = json.loads(element.get("value"))
-          domInfo = obtainFeedbackFromDOM(classname, element.get("id"), 
-                                          element.get("selector"), valueData["value"], 
-                                          element.get("index"), element.get("tag"),
-                                          element.get("objectType"), element.get("action"), 
-                                          valueData["searchType"],
-                                          browserName)
-          if(domInfo):                                
-            element["numberOfElementsWithSameSelector"] = domInfo["numberOfElementsWithSameSelector"]
-            element["numberOfElementsWithSameSelectorAndValue"] = domInfo["numberOfElementsWithSameSelectorAndValue"]
-            element["rc"] = domInfo["rc"]
-            element["selectors"] = domInfo["selectors"]
-            steps.append(element)
+          type = element.get("type")
+          if(type == "step"):
+            valueData = json.loads(element.get("value"))
+            domInfo = obtainFeedbackFromDOM(classname, element.get("id"), 
+                                             element.get("selector"), valueData["value"], 
+                                             element.get("index"), element.get("tag"),
+                                             element.get("objectType"), element.get("action"), 
+                                             valueData["searchType"],
+                                             browserName)
+            if(domInfo):                                
+               element["numberOfElementsWithSameSelector"] = domInfo["numberOfElementsWithSameSelector"]
+               element["numberOfElementsWithSameSelectorAndValue"] = domInfo["numberOfElementsWithSameSelectorAndValue"]
+               element["rc"] = domInfo["rc"]
+               element["selectors"] = domInfo["selectors"]
+               steps.append(element)
+          else:
+            steps.append(element)     
 
       except Exception as ex:
           print("Exception found during DOM parsing. Exception = " + str(ex))     
