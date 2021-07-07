@@ -15,7 +15,7 @@ from domparser import createMuukReport
 def gatherFeedbackData(browserName):
   #The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
   path = 'build/test-results/'+browserName
-
+  
   feedbackData = []
   if os.path.exists(path):
     for filename in os.listdir(path):
@@ -44,8 +44,11 @@ def gatherFeedbackData(browserName):
           "systemoutput":  e.find('system-out').text if e.find('system-out') is not None else "",
           "systemerror":  e.find('system-err').text if e.find('system-err') is not None else "",
           "failureMessage":  failureMessage,
+          "muukReport":  {},
         }
-        testResult["muukReport"] = createMuukReport(testResult.get("className"), browserName)
+        if testSuccess == False :
+         testResult["muukReport"] = createMuukReport(testResult.get("className"), browserName)
+        
         feedbackData.append(testResult)
   else:
     print("gatherFeedbackData - path does not exists ")

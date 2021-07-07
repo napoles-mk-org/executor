@@ -44,15 +44,18 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
 
    if(selectorsFound == 0):
       # No selectors were found with the expected value
-      element = {}
-      element["index"] = expectedIndex
-      if(attribute == "text"):
-         element["value"] = selectors[expectedIndex].text
-      else:   
-         element["value"] = selectors[expectedIndex][attribute]
-      element["selector"] = "found"
-      elements.append(element) 
-      returnCode = NO_SELECTOR_FOUND_WITH_SPECIFIC_VALUE
+      if(expectedIndex <= selectorsFound):
+         element = {}
+         element["index"] = expectedIndex
+         if(attribute == "text"):
+            element["value"] = selectors[expectedIndex].text
+         else:   
+            element["value"] = selectors[expectedIndex][attribute]
+         element["selector"] = "found"
+         elements.append(element) 
+         returnCode = NO_SELECTOR_FOUND_WITH_SPECIFIC_VALUE
+      else:
+         returnCode = STEP_INDEX_GREATER_THAN_NUMBER_OF_SELECTORS_FOUND   
    elif(selectorsFound == 1):
       if(expectedIndex in selectorIndexes):
         # The expected selector was found and it is the only selector.
@@ -67,14 +70,15 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
          returnCode = SELECTOR_FOUND_WITH_CORRECT_INDEX
       else:
          # The incorrect selector was found and this is the only selector with the expected value
-         element = {}
-         element["index"] = expectedIndex
-         if(attribute == "text"):
-            element["value"] = selectors[expectedIndex].text
-         else:   
-            element["value"] = selectors[expectedIndex][attribute]
-         element["selector"] = "original"
-         elements.append(element) 
+         if(expectedIndex <= selectorsFound):
+            element = {}
+            element["index"] = expectedIndex
+            if(attribute == "text"):
+               element["value"] = selectors[expectedIndex].text
+            else:   
+               element["value"] = selectors[expectedIndex][attribute]
+            element["selector"] = "original"
+            elements.append(element) 
 
          element = {}
          element["index"] = selectorIndexes[selectorsFound -1]
@@ -100,14 +104,15 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
          returnCode = MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_CORRECT_INDEX
       else:
          # The expected element was NOT found on the selectors
-         element = {}
-         if(attribute == "text"):
-            element["value"] = selectors[expectedIndex].text
-         else:   
-            element["value"] = selectors[expectedIndex][attribute]
-         element["index"] = expectedIndex
-         element["selector"] = "original"
-         elements.append(element) 
+         if(expectedIndex <= selectorsFound):
+            element = {}
+            if(attribute == "text"):
+               element["value"] = selectors[expectedIndex].text
+            else:   
+               element["value"] = selectors[expectedIndex][attribute]
+            element["index"] = expectedIndex
+            element["selector"] = "original"
+            elements.append(element) 
 
          element = {}
          if(attribute == "text"):
@@ -227,7 +232,6 @@ def parseHypertextSelector(selectors, expectedValue, expectedIndex):
 # Returns:
 #    jsonObject with the number of selectors found, the selctors and the return code. 
 def parseValueSelector(selectors, expectedValue, expectedIndex, type):
-   jsonObject = {}
    selectorIndexes = []
    selectorIndex = 0
    selectorsFound = 0
@@ -261,11 +265,7 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
          selectorsFound = soup.select(ntagselector)
          numberSelectorsFound = len(selectorsFound)
 
-         if(index > numberSelectorsFound):
-            jsonObject["selectors"] = []
-            jsonObject["rc"] = STEP_INDEX_GREATER_THAN_NUMBER_OF_SELECTORS_FOUND  
-            jsonObject["numberOfElementsWithSameSelectorAndValue"] = 0
-         elif(action == "assignment" or action == "mouseover"):
+         if(action == "assignment" or action == "mouseover"):
             jsonObject["selectors"] = []
             jsonObject["rc"] = ACTION_NOT_VALID_FOR_ANALYSIS
             jsonObject["numberOfElementsWithSameSelectorAndValue"] = 0
