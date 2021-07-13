@@ -9,13 +9,13 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-import ssl
+#import ssl
 from domparser import createMuukReport
 
 def gatherFeedbackData(browserName):
   #The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
   path = 'build/test-results/'+browserName
-  
+
   feedbackData = []
   if os.path.exists(path):
     for filename in os.listdir(path):
@@ -63,6 +63,7 @@ def gatherFeedbackData(browserName):
 
   return(feedbackData)
 
+
 def run(args):
   #Gets the value from the flags
   print("Starting process")
@@ -82,12 +83,12 @@ def run(args):
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  #muuktestRoute = 'https://portal.muuktest.com:8081/'
-  #supportRoute = 'https://testing.muuktest.com:8082/'
+  muuktestRoute = 'https://portal.muuktest.com:8081/'
+  supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  muuktestRoute = 'https://localhost:8081/'
-  supportRoute = 'https://localhost:8082/'
+  #muuktestRoute = 'https://localhost:8081/'
+  #supportRoute = 'https://localhost:8082/'
 
 
 
@@ -108,8 +109,8 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
-    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
+    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
+    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
@@ -146,14 +147,14 @@ def run(args):
 
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
-    context = ssl._create_unverified_context()
+    #context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     #now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
-    #response = request.urlopen(auth_request)
-    response = request.urlopen(auth_request, context=context)
+    response = request.urlopen(auth_request)
+    #response = request.urlopen(auth_request, context=context)
 
     #response = request.urlopen(url,data)
     file = response.read()
@@ -198,8 +199,8 @@ def run(args):
       }
 
       try:
-        #requests.post(supportRoute+"tracking_data", json=payload)
-        requests.post(supportRoute+"tracking_data", json=payload, verify=False)
+        requests.post(supportRoute+"tracking_data", json=payload)
+        # equests.post(supportRoute+"tracking_data", json=payload, verify=False)
       except Exception as e:
         print("No connection to support Data Base")
 
@@ -221,12 +222,12 @@ def run(args):
 
         #CLOUD SCREENSHOTS STARTS #
         resizeImages(browserName)
-        cloudKey = getCloudKey()
+        #cloudKey = getCloudKey()
         filesData = gatherScreenshots(browserName)
         try:
           if filesData != {}:
-            #requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-            requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
+            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+            #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
           else:
             print ("filesData empty.. cannot send screenshots")
         except Exception as e:
@@ -235,8 +236,8 @@ def run(args):
         #CLOUD SCREENSHOTS ENDS
         try:
           #Executions feedback
-          #requests.post(url, json=values, headers=hed)
-          requests.post(url, json=values, headers=hed, verify=False)
+          requests.post(url, json=values, headers=hed)
+          #requests.post(url, json=values, headers=hed, verify=False)
 
           #save the executed test entry to the database
           requests.post(supportRoute+"tracking_data", data={
@@ -266,9 +267,7 @@ def getBrowserName(browser):
   #select a browser from the list or return firefox as default
   return switcher.get(browser,"firefoxTest")
 
-def getCloudKey():
-  return('lkussv97qginpidrtoey-1ec3r3678pe7n0wulh1v9k-zthz8er1ukl59ux1k0epop-mioxpeadsu5iegbjhd4j4')
-  
+
 def main():
   parser=argparse.ArgumentParser(description="MuukTest cli to download tests from the cloud")
   parser.add_argument("-p",help="property to search the test for" ,dest="field", type=str, required=True)
