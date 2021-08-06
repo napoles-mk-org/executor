@@ -379,7 +379,7 @@ def createMuukReport(classname, browserName):
 
    muukReport["steps"] = steps
 
-   # Print report if touch file exists
+   # Print report if touch file exists 
    if(os.path.exists("TOUCH_TRACE_REPORT")):
      pprint.pprint(steps)
 
