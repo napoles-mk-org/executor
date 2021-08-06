@@ -303,9 +303,26 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
                elif(searchType == "imgsrc"):
                   element["value"] = selectorsFound[0]["src"]
                elements.append(element)
+               returnCode = ONE_SELECTOR_FOUND_FOR_NTAGSELECTOR
+
+               if(index > 0):
+                  element = {}
+                  element["index"] = 0
+                  element["selector"] = "found"
+                  if(searchType == "value"):
+                     element["value"] = selectorsFound[0]["value"]
+                  elif(searchType == "href"):   
+                     element["value"] = selectorsFound[0]["href"]
+                  elif(searchType == "text"):
+                     element["value"] = selectorsFound[0].text
+                  elif(searchType == "imgsrc"):
+                     element["value"] = selectorsFound[0]["src"]
+                  elements.append(element)
+                  returnCode = SELECTOR_FOUND_WITH_INCORRECT_INDEX
+
                jsonObject["selectors"] = elements
                jsonObject["numberOfElementsWithSameSelectorAndValue"] = numberSelectorsFound
-               jsonObject["rc"] = ONE_SELECTOR_FOUND_FOR_NTAGSELECTOR
+               jsonObject["rc"] = returnCode
 
          jsonObject["numberOfElementsWithSameSelector"] = numberSelectorsFound
 
