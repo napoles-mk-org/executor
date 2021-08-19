@@ -32,7 +32,11 @@ def gatherFeedbackData(browserName):
           if e.find('testcase') is not None :
             if e.find('testcase').find('failure') is not None :
               error = e.find('testcase').find('failure').attrib['message']
+              if(error.find("Build info") != -1):
+                error = error.split(sep = "Build", maxsplit=1)[0]
               failureMessage = e.find('testcase').find('failure').text
+              if(failureMessage.find("Build info") != -1):
+                failureMessage = failureMessage.split(sep = "Build", maxsplit=1)[0]
   
         testResult = {
           "className": e.attrib['name'] if e.attrib['name'] is not None else "",
@@ -200,7 +204,7 @@ def run(args):
 
       try:
         requests.post(supportRoute+"tracking_data", json=payload)
-        # equests.post(supportRoute+"tracking_data", json=payload, verify=False)
+        #requests.post(supportRoute+"tracking_data", json=payload, verify=False)
       except Exception as e:
         print("No connection to support Data Base")
 
