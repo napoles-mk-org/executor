@@ -9,7 +9,7 @@ import urllib
 import xml.etree.ElementTree
 from time import strftime
 from mkcloud import gatherScreenshots, resizeImages
-#import ssl
+import ssl
 
 def gatherFeedbackData(browserName):
   #The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -54,6 +54,10 @@ def gatherFeedbackData(browserName):
   return(feedbackData)
 
 
+def getCloudKey():
+  return "cloud_key"
+
+
 def run(args):
   #Gets the value from the flags
   print("Starting process")
@@ -73,12 +77,12 @@ def run(args):
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
   browserName = getBrowserName(browser)
-  muuktestRoute = 'https://portal.muuktest.com:8081/'
-  supportRoute = 'https://testing.muuktest.com:8082/'
+  #muuktestRoute = 'https://portal.muuktest.com:8081/'
+  #supportRoute = 'https://testing.muuktest.com:8082/'
 
 
-  #muuktestRoute = 'https://localhost:8081/'
-  #supportRoute = 'https://localhost:8082/'
+  muuktestRoute = 'https://localhost:8081/'
+  supportRoute = 'https://localhost:8082/'
 
 
 
@@ -99,8 +103,8 @@ def run(args):
   try:
     key_file = open(path,'r')
     key = key_file.read()
-    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
-    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
+    #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
+    r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
     token = responseObject["token"]
     userId = responseObject["userId"]
@@ -137,16 +141,16 @@ def run(args):
 
     # This route downloads the scripts by the property.
     url = muuktestRoute+'download_byproperty/'
-    #context = ssl._create_unverified_context()
+    context = ssl._create_unverified_context()
     data = urllib.parse.urlencode(values, doseq=True).encode('UTF-8')
 
     #now using urlopen get the file and store it locally
     auth_request = request.Request(url,headers=auth, data=data)
     auth_request.add_header('Authorization', 'Bearer '+token)
-    response = request.urlopen(auth_request)
-    #response = request.urlopen(auth_request, context=context)
+    #response = request.urlopen(auth_request)
+    response = request.urlopen(auth_request, context=context)
 
-    #response = request.urlopen(url,data)
+    #response = request.urlopen(url,data, context=context)
     file = response.read()
     flag = False
 
@@ -154,6 +158,7 @@ def run(args):
       decode_text = file.decode("utf-8")
       json_decode = json.loads(file.decode("utf-8"))
       print(json_decode["message"])
+      print(json_decode)
     except:
       flag = True
 
@@ -189,8 +194,8 @@ def run(args):
       }
 
       try:
-        requests.post(supportRoute+"tracking_data", json=payload)
-        # equests.post(supportRoute+"tracking_data", json=payload, verify=False)
+        #requests.post(supportRoute+"tracking_data", json=payload)
+        requests.post(supportRoute+"tracking_data", json=payload, verify=False)
       except Exception as e:
         print("No connection to support Data Base")
 
@@ -211,12 +216,12 @@ def run(args):
 
         #CLOUD SCREENSHOTS STARTS #
         resizeImages(browserName)
-        #cloudKey = getCloudKey()
+        cloudKey = getCloudKey()
         filesData = gatherScreenshots(browserName)
         try:
           if filesData != {}:
-            requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
-            #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
+            #requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
+            requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
           else:
             print ("filesData empty.. cannot send screenshots")
         except Exception as e:
@@ -225,8 +230,8 @@ def run(args):
         #CLOUD SCREENSHOTS ENDS
         try:
           #Executions feedback
-          requests.post(url, json=values, headers=hed)
-          #requests.post(url, json=values, headers=hed, verify=False)
+          #requests.post(url, json=values, headers=hed)
+          requests.post(url, json=values, headers=hed, verify=False)
 
           #save the executed test entry to the database
           requests.post(supportRoute+"tracking_data", data={
