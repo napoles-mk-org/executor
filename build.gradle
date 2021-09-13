@@ -34,6 +34,10 @@ dependencies {
     // If using JUnit, need to depend on geb-junit (3 or 4)
     testCompile "org.gebish:geb-junit4:$gebVersion"
 
+<<<<<<< HEAD
+=======
+    // Use JSONObject and JSONArray modules 
+>>>>>>> origin/master
     implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
 
     // Drivers
