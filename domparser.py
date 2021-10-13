@@ -18,7 +18,6 @@ MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_CORRECT_INDEX = 11
 MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_INCORRECT_INDEX = 12
 NO_SELECTOR_FOUND_WITH_NTAGSELECTOR = 13
 
-
 # Description:
 #   This method will be called to handle the result of filter operation done  
 #   on the selectors found.
