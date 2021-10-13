@@ -225,7 +225,7 @@ def parseHypertextSelector(selectors, searchInfo, expectedIndex):
          if(selector['href'] == expectedValue):
             selectorsFound += 1
             selectorIndexes.append(selectorIndex)
-      selectorIndex+=1   
+      selectorIndex+=1    
    
    # If more than 1 selector was found using the same value, lest's filter now by text and update
    # the selectorIndexes with the new indexes (hopefully only one!).
