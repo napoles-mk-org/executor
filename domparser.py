@@ -44,7 +44,7 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
 
    if(selectorsFound == 0):
       # No selectors were found with the expected value
-      if(expectedIndex <= selectorsFound):
+      if(expectedIndex <= len(selectors)):
          element = {}
          element["index"] = expectedIndex
          if(attribute == "text"):
@@ -70,15 +70,17 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
          returnCode = SELECTOR_FOUND_WITH_CORRECT_INDEX
       else:
          # The incorrect selector was found and this is the only selector with the expected value
-         if(expectedIndex <= selectorsFound):
-            element = {}
-            element["index"] = expectedIndex
+         element = {}
+         element["index"] = expectedIndex
+         element["selector"] = "original"
+         if(expectedIndex <= len(selectors)):
             if(attribute == "text"):
                element["value"] = selectors[expectedIndex].text
             else:   
                element["value"] = selectors[expectedIndex][attribute]
-            element["selector"] = "original"
-            elements.append(element) 
+         else:
+            element["value"] = expectedValue
+         elements.append(element) 
 
          element = {}
          element["index"] = selectorIndexes[selectorsFound -1]
@@ -104,16 +106,18 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
          returnCode = MULTIPLE_SELECTORS_FOUND_WITH_EXPECTED_VALUE_CORRECT_INDEX
       else:
          # The expected element was NOT found on the selectors
-         if(expectedIndex <= selectorsFound):
-            element = {}
+         element = {}
+         element["index"] = expectedIndex
+         element["selector"] = "original"
+         if(expectedIndex <= len(selectors)):
             if(attribute == "text"):
                element["value"] = selectors[expectedIndex].text
             else:   
                element["value"] = selectors[expectedIndex][attribute]
-            element["index"] = expectedIndex
-            element["selector"] = "original"
-            elements.append(element) 
-
+         else: 
+            element["value"] = expectedValue
+         elements.append(element) 
+   
          element = {}
          if(attribute == "text"):
             element["value"] = expectedValue
@@ -137,16 +141,17 @@ def processResults(selectors, expectedIndex, expectedValue, selectorsFound, sele
 #
 # Parameters: 
 #    selectors: Array of selectors found with the same ntagselector.
-#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    searchInfo: Object containing infromation related to the DOM analysis (value to find, element type, etc.).
 #    expectedIndex: The index that is expected to contain the expected value. 
 # 
 # Returns:
 #    jsonObject with the number of selectors found, the selctors and the return code. 
-def parseTextSelector(selectors, expectedValue, expectedIndex):
+def parseTextSelector(selectors, searchInfo, expectedIndex):
    jsonObject = {}
    selectorIndexes = []
    selectorIndex = 0
    selectorsFound = 0
+   expectedValue = searchInfo["value"]
 
    if(expectedValue == ""):
      jsonObject["numberOfElementsWithSameSelectorAndValue"] = 0   
@@ -155,7 +160,8 @@ def parseTextSelector(selectors, expectedValue, expectedIndex):
      return jsonObject
 
    for selector in selectors:
-      if((selector.text).strip() == expectedValue.strip()):
+      selectorText = selector.text.replace("'", "")
+      if(selectorText.strip() == expectedValue.strip()):
          selectorsFound += 1
          selectorIndexes.append(selectorIndex)
       selectorIndex+=1   
@@ -169,15 +175,17 @@ def parseTextSelector(selectors, expectedValue, expectedIndex):
 #
 # Parameters: 
 #    selectors: Array of selectors found with the same ntagselector.
-#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    searchInfo: Object containing infromation related to the DOM analysis (value to find, element type, etc.).
 #    expectedIndex: The index that is expected to contain the expected value. 
 # 
 # Returns:
 #    jsonObject with the number of selectors found, the selctors and the return code. 
-def parseImageSelector(selectors, expectedValue, expectedIndex):
+def parseImageSelector(selectors, searchInfo, expectedIndex):
    selectorIndexes = []
    selectorIndex = 0
    selectorsFound = 0
+   expectedValue = searchInfo["value"]
+
    for selector in selectors:
       if(selector['src'] == expectedValue ):
          selectorsFound += 1
@@ -193,16 +201,19 @@ def parseImageSelector(selectors, expectedValue, expectedIndex):
 #
 # Parameters: 
 #    selectors: Array of selectors found with the same ntagselector.
-#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    searchInfo: Object containing infromation related to the DOM analysis (value to find, element type, etc.).
 #    expectedIndex: The index that is expected to contain the expected value. 
 # 
 # Returns:
 #    jsonObject with the number of selectors found, the selctors and the return code. 
-def parseHypertextSelector(selectors, expectedValue, expectedIndex):
+def parseHypertextSelector(selectors, searchInfo, expectedIndex):
    jsonObject = {}
    selectorIndexes = []
+   filteredIndexes = []
    selectorIndex = 0
    selectorsFound = 0
+   expectedValue = searchInfo["value"]
+   expectedText = searchInfo["text"]
 
    if(expectedValue == ""):
      jsonObject["numberOfElementsWithSameSelectorAndValue"] = 0   
@@ -217,6 +228,18 @@ def parseHypertextSelector(selectors, expectedValue, expectedIndex):
             selectorIndexes.append(selectorIndex)
       selectorIndex+=1   
    
+   # If more than 1 selector was found using the same value, lest's filter now by text and update
+   # the selectorIndexes with the new indexes (hopefully only one!).
+   if(selectorsFound > 1 and expectedText != ""):
+     for i in selectorIndexes:
+        if(str(selectors[i].string) == expectedText):
+           filteredIndexes.append(i)
+     if(len(filteredIndexes) > 0 ):
+      selectorIndexes = []
+      selectorsFound = len(filteredIndexes)
+      for index in filteredIndexes:
+         selectorIndexes.append(index)
+
    return processResults(selectors, expectedIndex, expectedValue, selectorsFound, selectorIndexes, "href")
 
 # Description:
@@ -226,15 +249,16 @@ def parseHypertextSelector(selectors, expectedValue, expectedIndex):
 #
 # Parameters: 
 #    selectors: Array of selectors found with the same ntagselector.
-#    expectedValue: The value that is expected to be found (value captured by the extension).
+#    searchInfo: Object containing infromation related to the DOM analysis (value to find, element type, etc.).
 #    expectedIndex: The index that is expected to contain the expected value. 
 # 
 # Returns:
 #    jsonObject with the number of selectors found, the selctors and the return code. 
-def parseValueSelector(selectors, expectedValue, expectedIndex, type):
+def parseValueSelector(selectors, searchInfo, expectedIndex, type):
    selectorIndexes = []
    selectorIndex = 0
    selectorsFound = 0
+   expectedValue = searchInfo["value"]
 
    for selector in selectors:
       if(selector['value'] == expectedValue ):
@@ -252,7 +276,7 @@ def parseValueSelector(selectors, expectedValue, expectedIndex, type):
 #
 # Returns:
 #    jsonObject with the number of selector information. 
-def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, type, action, searchType, browserName):
+def obtainFeedbackFromDOM(classname, stepId, ntagselector, index, tag, type, action, searchInfo, browserName):
    jsonObject = {}
    elements = []    
    path = 'build/reports/geb/' + browserName + '/'
@@ -260,6 +284,7 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
 
    if os.path.exists(filename):
       try:
+         searchType = searchInfo["searchType"]
          text = open(filename, 'r').read()
          soup = BeautifulSoup(text, 'html.parser')
          selectorsFound = soup.select(ntagselector)
@@ -276,13 +301,13 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
                jsonObject["rc"] = NO_SELECTOR_FOUND_WITH_NTAGSELECTOR
             elif(numberSelectorsFound > 1 ):
                if(searchType == "value"):
-                  jsonObject = parseValueSelector(selectorsFound, value, index, type)
+                  jsonObject = parseValueSelector(selectorsFound, searchInfo, index, type)
                elif(searchType == "href"):
-                  jsonObject = parseHypertextSelector(selectorsFound, value, index)
+                  jsonObject = parseHypertextSelector(selectorsFound, searchInfo, index)
                elif(searchType == "text"):
-                  jsonObject = parseTextSelector(selectorsFound, value, index)
+                  jsonObject = parseTextSelector(selectorsFound, searchInfo, index)
                elif(searchType == "imgsrc"):
-                  jsonObject = parseImageSelector(selectorsFound, value, index)
+                  jsonObject = parseImageSelector(selectorsFound, searchInfo, index)
                else:
                   # Backend sent an undef searchType, we will return no info
                   jsonObject["selectors"] = []
@@ -292,7 +317,7 @@ def obtainFeedbackFromDOM(classname, stepId, ntagselector, value, index, tag, ty
             elif(numberSelectorsFound == 1 ):
                element = {}
                element["index"] = index
-               element["value"] = value
+               element["value"] = searchInfo["value"]
                element["selector"] = "original"
                if(searchType == "value"):
                   element["value"] = selectorsFound[0]["value"]
@@ -353,12 +378,12 @@ def createMuukReport(classname, browserName):
         for element in elements['stepsFeedback']:
           type = element.get("type")
           if(type == "step"):
-            valueData = json.loads(element.get("value"))
+            valueInfo = json.loads(element.get("value"))
             domInfo = obtainFeedbackFromDOM(classname, element.get("id"), 
-                                             element.get("selector"), valueData["value"], 
+                                             element.get("selector"), 
                                              element.get("index"), element.get("tag"),
                                              element.get("objectType"), element.get("action"), 
-                                             valueData["searchType"],
+                                             valueInfo,
                                              browserName)
             if(domInfo):                                
                element["numberOfElementsWithSameSelector"] = domInfo["numberOfElementsWithSameSelector"]
