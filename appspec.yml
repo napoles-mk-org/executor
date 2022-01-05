@@ -23,7 +23,7 @@ os: linux
 #   may cause associated deployments to fail.
 files:
   - source: /
-    destination: /projects/executor/
+    destination: /home/ubuntu/projects/executor/
 hooks:
 # For each deployment lifecycle event, specify multiple "location" entries 
 #   if you want to run multiple scripts during that event.
