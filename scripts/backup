@@ -1,2 +1,2 @@
 #!/bin/bash
-cp -r projects/executor /projects/executor_bck
+cp -r /home/ubuntu/projects/executor /home/ubuntu/projects/executor_bck
