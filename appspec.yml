@@ -49,6 +49,9 @@ hooks:
 # During the BeforeInstall deployment lifecycle event, run the commands 
 #   in the script specified in "location".
   BeforeInstall:
+    - location: scripts/backup
+      timeout: 300
+      runas: root
     - location: scripts/install_dependencies
       timeout: 300
       runas: root
@@ -56,7 +59,7 @@ hooks:
 #   in the script specified in "location".
   AfterInstall:
     - location: scripts/start_services
-      timeout: 180
+      timeout: 300
       runas: root
 # During the ApplicationStop deployment lifecycle event, run the commands 
 #   in the script specified in "location" starting from the root of the 
