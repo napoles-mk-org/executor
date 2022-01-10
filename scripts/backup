@@ -1,2 +1,5 @@
 #!/bin/bash
-cp -r /home/ubuntu/projects/executor /home/ubuntu/projects/executor_bck
+if [ -d "/home/ubuntu/projects/executor" ]; then
+  # Control will enter here if $DIRECTORY exists.
+  cp -r /home/ubuntu/projects/executor /home/ubuntu/projects/executor_bck
+fi
