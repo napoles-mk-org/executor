@@ -1,23 +1,21 @@
 #!/bin/bash
-#Updating the path to executor instance
-path_exec='"path":"//"'
-new_path_exec='"path":"/home/ubuntu/projects/executor/"'
-sudo sed -i "s%$path_exec%$new_path_exec%g" /home/ubuntu/projects/support/config/default.json
-
-#Verifying the instance queue
+#Verifying the instance
 #Finding the current ip
 IP=$(hostname -I | awk '{print $1}')
-#172.31.1.41 Ari Testing Instance
+#Testing Instance
 testingInstance="172.31.20.165"
+#Staging Instance
 stagingInstance="172.31.12.113"
-testingInstanceTmp="172.31.1.41"#ari-testing
+#172.31.1.41 Ari Testing Instance
+testingInstanceTmp="192.168.1.157"
 
+echo $IP
 if [[ "$IP" == $testingInstance || "$IP" == $testingInstanceTmp ]]; then
     echo "It's the testing instance"
-    #Change queue name
+    #Change portal route
     sudo sed -i 's/portal.muuktest.com/testing.muuktest.com/g' /home/ubuntu/projects/executor/mkcli.py
 elif [[ "$IP" == $stagingInstance ]]; then
     echo "It's the staging instance"
-    #Change queue name
+    #Change portal route
     sudo sed -i 's/portal.muuktest.com/staging.muuktest.com/g' /home/ubuntu/projects/executor/mkcli.py
 fi
