@@ -7,7 +7,7 @@ testingInstance="172.31.20.165"
 #Staging Instance
 stagingInstance="172.31.12.113"
 #172.31.1.41 Ari Testing Instance
-testingInstanceTmp="192.168.1.157"
+testingInstanceTmp="172.31.1.41"
 
 echo $IP
 if [[ "$IP" == $testingInstance || "$IP" == $testingInstanceTmp ]]; then
