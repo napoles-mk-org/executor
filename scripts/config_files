@@ -21,6 +21,7 @@ elif [[ "$IP" == $stagingInstance ]]; then
 fi
 
 #Setting the cloud key
+#The cloud key it's located in a external env.json file
 cloudKey=$(cat /home/ubuntu/env.json  | jq -r '.cloudKey')
 sudo sed -i '$ a def getCloudKey():' /home/ubuntu/projects/executor/mkcloud.py
-sudo sed -i "$ a  \ \ $cloudKey" /home/ubuntu/projects/executor/mkcloud.py
+sudo sed -i "$ a  \ \ return('$cloudKey')" /home/ubuntu/projects/executor/mkcloud.py
