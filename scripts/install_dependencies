@@ -3,5 +3,10 @@
 sudo apt -y install python3-pip
 #Installing BeautifulSoup4
 sudo pip3 install BeautifulSoup4
+#sudo pip3 install bs4
 #Installing xvfb
 sudo apt -y install xvfb
+#Installing google chrome
+#sudo apt-get install google-chrome-stable
+#Installing jq to read json files
+sudo apt -y install jq

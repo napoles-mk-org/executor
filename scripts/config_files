@@ -19,3 +19,8 @@ elif [[ "$IP" == $stagingInstance ]]; then
     #Change portal route
     sudo sed -i 's/portal.muuktest.com/staging.muuktest.com/g' /home/ubuntu/projects/executor/mkcli.py
 fi
+
+#Setting the cloud key
+cloudKey=$(cat /home/ubuntu/env.json  | jq -r '.cloudKey')
+sudo sed -i '$ a def getCloudKey():' /home/ubuntu/projects/executor/mkcloud.py
+sudo sed -i "$ a  \ \ $cloudKey" /home/ubuntu/projects/executor/mkcloud.py
