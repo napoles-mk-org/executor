@@ -43,6 +43,8 @@ dependencies {
     // JSON simple for MuukReport
     implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1' 
 
+    //implementation group: 'net.lightbody.bmp', name: 'browsermob-proxy', version: '2.1.5'
+    compile group: 'net.lightbody.bmp', name: 'browsermob-core', version: '2.1.5'    
 }
 
 webdriverBinaries {
