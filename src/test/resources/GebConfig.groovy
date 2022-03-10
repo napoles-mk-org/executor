@@ -48,6 +48,12 @@ environments {
                 httpHeaders.add("CF-Access-Client-Secret", "SECRET_VALUE");
                 httpRequest.headers().add(httpHeaders);
             }
+            else if(httpMessageInfo.getUrl().toString().contains("staging.steppingblocks.com/login")){
+                DefaultHttpHeaders httpHeaders = new DefaultHttpHeaders();
+                httpHeaders.add("CF-Access-Client-ID", "CLIENT_VALUE");
+                httpHeaders.add("CF-Access-Client-Secret", "SECRET_VALUE");
+                httpRequest.headers().add(httpHeaders);
+            }
             return null;
         }
     });
@@ -100,6 +106,12 @@ environments {
                 httpHeaders.add("CF-Access-Client-Secret", "SECRET_VALUE");
                 httpRequest.headers().add(httpHeaders);
             }
+            else if(httpMessageInfo.getUrl().toString().contains("staging.steppingblocks.com/login")){
+                DefaultHttpHeaders httpHeaders = new DefaultHttpHeaders();
+                httpHeaders.add("CF-Access-Client-ID", "CLIENT_VALUE");
+                httpHeaders.add("CF-Access-Client-Secret", "SECRET_VALUE");
+                httpRequest.headers().add(httpHeaders);
+            }
             return null;
         }
     });
@@ -115,4 +127,3 @@ environments {
 
 // To run the tests with all browsers just run “./gradlew test”
 baseUrl = "http://gebish.org"
-
