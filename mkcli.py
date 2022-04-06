@@ -68,8 +68,8 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
-  successCriteria = 80 if args.criteria is None else args.criteria
   dimensions = args.dimensions
+  successCriteria = args.criteria
   if dimensions is not None:
     checkDimensions = isinstance(dimensions[0], int) & isinstance(dimensions[1],int)
   else:
@@ -95,6 +95,13 @@ def run(args):
 
   userId = ''
   if field == "hashtag":
+    if successCriteria is None:
+      #if not a specific criteria was set, look for this hashtag on criteria file
+      criteria_file = open('criteria.json')
+      if criteria_file is not None:
+        criteria = json.load(criteria_file)
+        successCriteria = criteria.get(value)     
+      criteria_file.close()
     value = "#"+value
 
   valueArr = []
@@ -248,7 +255,7 @@ def run(args):
     print(field+': is not an allowed property')
 
   #If exitCode is 0 everything is OK, no need to check criteria.
-  if exitCode != 0 and len(testsExecuted) > 0:
+  if exitCode != 0 and successCriteria is not None and len(testsExecuted) > 0:
     exitCode = getExitCodeFromSuccessCriteria(successCriteria, testsExecuted)
 
   print("exiting script with exitcode: " + str(exitCode))
@@ -275,7 +282,7 @@ def main():
   parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
   parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
   parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
-  parser.add_argument("-criteria",help="(Optional). Minimal rate of passed tests to return success code. Value from 0 to 100. Default 80", type=int, dest="criteria")
+  parser.add_argument("-criteria",help="(Optional). Minimal rate of passed tests to return success code. Value from 0 to 100.", type=int, dest="criteria")
   parser.set_defaults(func=run)
   args=parser.parse_args()
   args.func(args)
