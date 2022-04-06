@@ -97,11 +97,16 @@ def run(args):
   if field == "hashtag":
     if successCriteria is None:
       #if not a specific criteria was set, look for this hashtag on criteria file
-      criteria_file = open('criteria.json')
-      if criteria_file is not None:
-        criteria = json.load(criteria_file)
-        successCriteria = criteria.get(value)     
-      criteria_file.close()
+      path = dirname + '/criteria.json'
+      try:
+        with open(path, 'r') as criteria_file:
+          criteria = json.load(criteria_file)
+          successCriteria = criteria.get(value)
+          if successCriteria is not None:
+            print("A success rate criteria of:", successCriteria, "% is being applied to this execution.")
+      except IOError:
+        #couldn't read the file, likely it does not exist. Nothing wrong
+        pass
     value = "#"+value
 
   valueArr = []
