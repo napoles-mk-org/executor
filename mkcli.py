@@ -8,10 +8,11 @@ import json
 import urllib
 import xml.etree.ElementTree
 from time import strftime
-from mkcloud import gatherScreenshots, resizeImages, getCloudKey
+from mkcloud import gatherScreenshots, resizeImages
 from mkvideo import Video
 #import ssl
 from domparser import createMuukReport
+import platform
 
 def gatherFeedbackData(browserName):
   #The path will be relative to the browser used to execute the test (chromeTest/firefoxTest)
@@ -208,7 +209,8 @@ def run(args):
       else:
         print("executionNumber.execution file not found")
 
-      os.system('chmod 544 ' + dirname + '/gradlew')
+      if(platform.system().startswith("linux")):
+        os.system('chmod 544 ' + dirname + '/gradlew')
 
       #save the dowonloaded test entry to the database
       payload = {
@@ -229,12 +231,12 @@ def run(args):
 
       if noexec == False :
         #Execute the test
-        videoNameFile = str(organizationId) + "_" + str(executionNumber) + ".mp4"
-        v = Video()
-        print("File name for video: " + videoNameFile)
+        #videoNameFile = str(organizationId) + "_" + str(executionNumber) + ".mp4"
+        #v = Video()
+        #print("File name for video: " + videoNameFile)
         print("Executing test...")
         try:
-          v.checkAndStartRecording(videoNameFile)
+          #v.checkAndStartRecording(videoNameFile)
           #v.checkActiveSession()
           #v.executeCmd("ps -ef | grep ffmpeg")
           #v.executeCmd("ls -ltr | grep *.mp4")
@@ -244,9 +246,9 @@ def run(args):
           print(e)
 
         #v.executeCmd("ps -ef | grep ffmpeg")
-        v.checkAndStopRecording()
+        #v.checkAndStopRecording()
         #v.executeCmd("ls -ltr | grep *.mp4")
-        del v
+        #del v
         testsExecuted = gatherFeedbackData(browserName)
         url = muuktestRoute+'feedback/'
         #values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
@@ -264,9 +266,9 @@ def run(args):
             requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
             #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
             print("Upload the Video: ")
-            videoFile = open(videoNameFile, 'rb')
-            files = {'file': videoFile}
-            requests.post(muuktestRoute + 'upload_video/', headers=hed, files=files)
+            #videoFile = open(videoNameFile, 'rb')
+            #files = {'file': videoFile}
+            #requests.post(muuktestRoute + 'upload_video/', headers=hed, files=files)
           else:
             print ("filesData empty.. cannot send screenshots")
         except Exception as e:

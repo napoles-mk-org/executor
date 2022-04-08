@@ -7,6 +7,7 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.remote.DesiredCapabilities
 import org.openqa.selenium.remote.CapabilityType
+import org.openqa.selenium.edge.EdgeDriver
 
 waiting {
   timeout = 20
@@ -27,6 +28,10 @@ environments {
       cap.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
       new ChromeDriver(cap);
     }
+  }
+
+  edge {
+   driver = { new EdgeDriver() }
   }
 
   // run via “./gradlew chromeHeadlessTest”
