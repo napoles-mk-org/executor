@@ -49,9 +49,16 @@ dependencies {
 
 webdriverBinaries {
     driverUrlsConfiguration = resources.text.fromFile('packages.json')
-    chromedriver chromeDriverVersion
+    chromedriver {
+        version = chromeDriverVersion
+       fallbackTo32Bit = true
+    }
     geckodriver geckoDriverVersion
-    edgedriver edgeDriverVersion
+     
+    edgedriver {
+        version = edgeDriverVersion
+       fallbackTo32Bit = true
+    }
 }
 
 drivers.each { driver ->
