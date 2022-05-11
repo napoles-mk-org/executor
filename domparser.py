@@ -55,7 +55,7 @@ def createMuukReport(classname, browserName):
                
                if(i < 3):
                   domInfo = obtainCSSFeedbackFromDOM(classname, element.get("id"), 
-                                                selector, 
+                                             selector, 
                                                 index,
                                                 element.get("tag"),
                                                 element.get("objectType"), element.get("action"), 
@@ -64,8 +64,9 @@ def createMuukReport(classname, browserName):
                                                 attributes,
                                                 SELECTORS_ARRAY[i])
                else:
-                  # XPATH library is case sensitive and MuukTest creates the tag as upper case, we need to fix this. 
-                  selector = selector.replace(element.get("tag").upper(), element.get("tag"), 1)
+                  if(selector != None):
+                    # XPATH library is case sensitive and MuukTest creates the tag as upper case, we need to fix this. 
+                    selector = selector.replace(element.get("tag").upper(), element.get("tag"), 1)
                   domInfo = obtainXPATHFeedbackFromDOM(classname, element.get("id"), 
                                                 selector, 
                                                 index,
