@@ -8,6 +8,7 @@ import lxml.html
 from xml.sax import saxutils
 from lxml import html
 import traceback
+import logging
 
 UNKNOWN_ERROR = 1 
 NO_TAG_PROVIDED_BY_BE = 2
@@ -29,6 +30,8 @@ CLASSIC_SELECTOR    = 0
 DYMANIC_SELECTOR    = 1
 CUSTOM_CSS_SELECTOR = 2
 XPATH_SELECTOR      = 3
+
+logger = logging.getLogger(__name__)
 
 # Description:
 #   This method returns the inner HTML of the element received as a parameter. 
@@ -55,6 +58,7 @@ def inner_html(element):
 #    XPATH selector
 #
 def buildXPATHSelector(tag, attributes, root):
+   logger.info("buildXPATHSelector - attributes = " + str(attributes))
    jsonObject = {}
    elements = []  
    textUsedOnSelector = False 
@@ -118,7 +122,7 @@ def buildXPATHSelector(tag, attributes, root):
 
          # Some characters will cause problems on the XPATH expression when using contains, we need to escape the next 
          # characters: 
-         print(repr(text))
+         #logging.info(repr(text))
          #text = text.replace("$", '\$') // no need to escape
          text = text.replace("'", "\'")
          text = text.strip()
@@ -138,8 +142,11 @@ def buildXPATHSelector(tag, attributes, root):
            jsonObject["rc"] = NO_SELECTOR_FOUND_WITH_NTAGSELECTOR
            return  jsonObject      
 
+   logger.info("buildXPATHSelector - Selector build from attributes = " + str(selector))
    htmlElementsFound = root.xpath(selector)
    numberhtmlElementsFound = len(htmlElementsFound)
+   logger.info("buildXPATHSelector - numberhtmlElementsFound = " + str(numberhtmlElementsFound))
+   
    if(numberhtmlElementsFound == 0 ):
       element = {}
       element["selector"] = selector
@@ -156,14 +163,15 @@ def buildXPATHSelector(tag, attributes, root):
       jsonObject["rc"] = SELECTOR_BUILD_FROM_ATTRIBUTES
       jsonObject["numberOfElementsFoundWithSelector"] = 1
       jsonObject["numberOfElementsFoundWithSelectorAndValue"] = 1
-   elif(numberhtmlElementsFound > 1 and textUsedOnSelector):
+   elif(numberhtmlElementsFound > 1 or textUsedOnSelector):
       element = {}
       element["selector"] = selector
       element["index"] = 0
       jsonObject["selectors"] = element
       jsonObject["rc"] = SELECTOR_BUILD_FROM_ATTRIBUTES
       jsonObject["numberOfElementsFoundWithSelector"] = numberhtmlElementsFound
-      jsonObject["numberOfElementsFoundWithSelectorAndValue"] = numberhtmlElementsFound   
+      jsonObject["numberOfElementsFoundWithSelectorAndValue"] = numberhtmlElementsFound 
+
 
    return jsonObject
 
@@ -176,6 +184,7 @@ def buildXPATHSelector(tag, attributes, root):
 # Returns:
 #    jsonObject with the number of selector information. 
 def obtainXPATHFeedbackFromDOM(classname, stepId, selector, index, tag, type, action, searchInfo, browserName, attributes, selector_type):
+   logging.info("Starting XPATH analysis for selector " + str(selector) + " witn index " + str(index) + " on step " + str(stepId))
    jsonObject = {}    
    path = 'build/reports/geb/' + browserName + '/'
    filename = path + classname + "_" + str(stepId) + ".html"
@@ -186,6 +195,7 @@ def obtainXPATHFeedbackFromDOM(classname, stepId, selector, index, tag, type, ac
          text = open(filename, 'r').read()
          root = lxml.html.fromstring(text)
          if(selector is None):
+            logging.info("No XPATH selector found, let's build from attributes")
             return buildXPATHSelector(tag, attributes, root)
          else:
             htmlElementsFound = root.xpath(selector)
@@ -200,6 +210,7 @@ def obtainXPATHFeedbackFromDOM(classname, stepId, selector, index, tag, type, ac
                jsonObject["numberOfElementsFoundWithSelectorAndValue"] = 0
             else:  
                if(numberSelectorsFound == 0):
+                  logging.info("Found "+ str(numberSelectorsFound) + " selectors and no value to filter, let's build from attributes")
                   return buildXPATHSelector(tag, attributes, root)
 
                elif(numberSelectorsFound == 1 ):
@@ -230,16 +241,15 @@ def obtainXPATHFeedbackFromDOM(classname, stepId, selector, index, tag, type, ac
             jsonObject["numberOfElementsFoundWithSelector"] = numberSelectorsFound
 
       except Exception as ex:
-         print("Failed to open file " + str(filename) + ex)
-         print (ex)
+         logging.error(ex)
 
    # Let's validate the data we generated is a valid json for this step
    try:
      json.loads(json.dumps(jsonObject)) 
    except Exception as ex: 
-     pprint.pprint("Invalid JSON format for step " + str(stepId) +"  found, will not send feedback to BE")
-     print(ex) 
-     print(traceback.format_exc())    
+     logging.error("Invalid JSON format for step " + str(stepId) +"  found, will not send feedback to BE")
+     logging.error(ex) 
+     logging.error(traceback.format_exc())    
      jsonObject = {}
 
    return jsonObject

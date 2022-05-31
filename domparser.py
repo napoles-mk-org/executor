@@ -6,6 +6,10 @@ from bs4 import BeautifulSoup
 from CSSAnalyzer import obtainCSSFeedbackFromDOM
 from XPATHAnalyzer import obtainXPATHFeedbackFromDOM
 import traceback
+import logging
+import shutil
+import pathlib
+
 
 CLASSIC_SELECTOR    = 0
 DYMANIC_SELECTOR    = 1
@@ -13,6 +17,14 @@ CUSTOM_CSS_SELECTOR = 2
 XPATH_SELECTOR      = 3
 
 SELECTORS_ARRAY =  [CLASSIC_SELECTOR, DYMANIC_SELECTOR, CUSTOM_CSS_SELECTOR, XPATH_SELECTOR ]
+LOG_FILE_NAME = "DOMParser.log"
+
+logging.basicConfig(filename = LOG_FILE_NAME,
+                    filemode = "w",
+                    format = "%(levelname)s %(asctime)s - %(message)s", 
+                    level = logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 # Description:
 #   This method will be call to execuete the Muuk Report analysis.  
@@ -23,7 +35,7 @@ SELECTORS_ARRAY =  [CLASSIC_SELECTOR, DYMANIC_SELECTOR, CUSTOM_CSS_SELECTOR, XPA
 # Returns:
 #    jsonObject with the number of selector information. 
 def createMuukReport(classname, browserName):
-   #os.chdir("/home/serrano/Development/executor/local/executor")
+   logging.info("Starting parsing analysis")
    path = 'build/reports/'
    filename = path + classname + ".json"
    muukReport = {}
@@ -76,7 +88,7 @@ def createMuukReport(classname, browserName):
                                                 browserName,
                                                 attributes,
                                                 SELECTORS_ARRAY[i])                               
-
+               logging.info("Object  = " + json.dumps(domInfo,sort_keys=True, indent=4))
                if(domInfo):                                
                   element["feedback"].append(domInfo)
             steps.append(element)  
@@ -89,28 +101,39 @@ def createMuukReport(classname, browserName):
             steps.append(element)     
 
       except Exception as ex:
-          print("Exception found during DOM parsing. Exception = ")
-          print(ex) 
-          print(traceback.format_exc())    
+          logging.error("Exception found during DOM parsing. Exception = ")
+          logging.error(ex) 
+          logging.error(traceback.format_exc())    
       
       # Closing file
       jsonFile.close()
    else:
-      print("Muuk Report was not found!")   
+      logging.error("Muuk Report was not found!")   
    
    # Let's validate the data we generated is a valid json
    try:
      json.loads(json.dumps(steps)) 
      muukReport["steps"] = steps
    except Exception as ex: 
-     pprint.pprint("Invalid JSON format was found, will not send feedback to BE")
-     print(ex) 
-     print(traceback.format_exc())    
+     logging.error("Invalid JSON format was found, will not send feedback to BE")
+     logging.error(ex) 
+     logging.error(traceback.format_exc())    
      muukReport["steps"] = {}
 
    # Print report if touch file exists 
    if(os.path.exists("TOUCH_TRACE_REPORT")):
-     pprint.pprint(muukReport["steps"])
+     pprint.pprint((muukReport["steps"]))
+
+   logging.info("Final Feedback Object:")
+   logging.info(json.dumps(muukReport["steps"],sort_keys=True, indent=4))
+
+   # Last step is to copy the log file to build folder
+   try:
+      source = str(pathlib.Path(__file__).parent.resolve()) + "/" + LOG_FILE_NAME
+      destination = str(pathlib.Path(__file__).parent.resolve()) + "/build/" +LOG_FILE_NAME; 
+      shutil.copyfile(source, destination)
+   except Exception as ex: 
+      print(ex) 
 
    return muukReport
 

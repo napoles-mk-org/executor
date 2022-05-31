@@ -1,9 +1,9 @@
 
 import os
 import json
-import pprint
 from bs4 import BeautifulSoup
 import traceback
+import logging
 
 UNKNOWN_ERROR = 1 
 NO_TAG_PROVIDED_BY_BE = 2
@@ -27,7 +27,9 @@ CUSTOM_CSS_SELECTOR = 2
 XPATH_SELECTOR      = 3
 
 SELECTORS_ARRAY =  [CLASSIC_SELECTOR, DYMANIC_SELECTOR, CUSTOM_CSS_SELECTOR ]
+SELECTORS_ARRAY_NAMES =  ["CLASSIC_SELECTOR", "DYMANIC_SELECTOR", "CUSTOM_CSS_SELECTOR" ]
 
+logger = logging.getLogger(__name__)
 
 # Description:
 #   This method will be called to handle the result of filter (by value, text,etc) operation done  
@@ -436,6 +438,7 @@ def buildCSSSelector(tag, attributes, searchInfo, index,  soup):
    # now that we have a selector, let's va;idate it returns elements.
    htmlElementsFound = soup.select(cssSelector)
    numberElementsFound = len(htmlElementsFound)
+   logger.info("buildCSSSelector - Found " + str(numberElementsFound) + " with selector " + cssSelector)
 
    if(numberElementsFound == 1):
       element = {}
@@ -453,7 +456,7 @@ def buildCSSSelector(tag, attributes, searchInfo, index,  soup):
       elif(searchType == "text"):
          jsonObject = parseTextSelector(cssSelector, htmlElementsFound, searchInfo, index, tag)
       elif(searchType == "imgsrc"):
-         jsonObject = parseImageSelector(cssSelector, numberElementsFound, searchInfo, index, tag)
+         jsonObject = parseImageSelector(cssSelector, htmlElementsFound, searchInfo, index, tag)
       else:
          # Backend sent an undef searchType, we will return no info
          element = {}   
@@ -483,6 +486,7 @@ def buildCSSSelector(tag, attributes, searchInfo, index,  soup):
 # Returns:
 #    jsonObject with the number of selector information. 
 def obtainCSSFeedbackFromDOM(classname, stepId, selector, index, tag, type, action, searchInfo, browserName, attributes, selector_type):
+   logging.info("Starting CSS analysis for "+ SELECTORS_ARRAY_NAMES[selector_type] + " selector " + str(selector) + " witn index " + str(index) + " on step " + str(stepId))
    jsonObject = {}  
    path = 'build/reports/geb/' + browserName + '/'
    filename = path + classname + "_" + str(stepId) + ".html"
@@ -494,8 +498,8 @@ def obtainCSSFeedbackFromDOM(classname, stepId, selector, index, tag, type, acti
          soup = BeautifulSoup(text, 'html.parser')
          if(selector is None):
             if(selector_type == CUSTOM_CSS_SELECTOR):
-               print("NO CSS Selector, need to build it")
-               return buildCSSSelector(tag, attributes, searchInfo, index, soup)
+               logging.info("NO CSS Selector, need to build it")
+               return buildCSSSelector(tag, attributes, searchInfo, 0, soup)
          else:
             selectorsFound = soup.select(selector)
             numberSelectorsFound = len(selectorsFound)
@@ -573,21 +577,29 @@ def obtainCSSFeedbackFromDOM(classname, stepId, selector, index, tag, type, acti
                         jsonObject["numberOfElementsFoundWithSelectorAndValue"] = 0
                   else:
                      # We do not have a value to try to identify the element, let's use the attributes
-                     return findIndexFromAttributes(selector, tag, attributes, soup)       
+                     if(len(attributes) > 0 and selector_type == CUSTOM_CSS_SELECTOR ):
+                        logging.info("Found "+ str(numberSelectorsFound) + " selectors and no value to filter, let's build from attributes")
+                        return findIndexFromAttributes(selector, tag, attributes, soup) 
+                     else:
+                        element = {}   
+                        element["selector"] = selector
+                        element["index"] = index        
+                        jsonObject["selectors"] = element
+                        jsonObject["rc"] = NO_SEARCH_TYPE_PROVIDED_BY_BE
+                        jsonObject["numberOfElementsFoundWithSelectorAndValue"] = 0
 
             jsonObject["numberOfElementsFoundWithSelector"] = numberSelectorsFound
 
       except Exception as ex:
-         print("Failed to open file " + str(filename) + ex)
-         print (ex)
+         logging.error (ex)
 
    # Let's validate the data we generated is a valid json for this step
    try:
      json.loads(json.dumps(jsonObject)) 
    except Exception as ex: 
-     pprint.pprint("Invalid JSON format for step " + str(stepId) +"  found, will not send feedback to BE")
-     print(ex) 
-     print(traceback.format_exc())    
+     logging.error("Invalid JSON format for step " + str(stepId) +"  found, will not send feedback to BE")
+     logging.error(ex) 
+     logging.error(traceback.format_exc())    
      jsonObject = {}
 
    return jsonObject
