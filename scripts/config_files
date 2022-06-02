@@ -1,0 +1,29 @@
+#!/bin/bash
+#Verifying the instance
+#Finding the current ip
+IP=$(hostname -I | awk '{print $1}')
+#Testing Instance
+testingInstance="172.31.20.165"
+#Staging Instance
+stagingInstance="172.31.12.113"
+#172.31.1.41 Ari Testing Instance
+testingInstanceTmp="172.31.1.41"
+
+echo $IP
+if [[ "$IP" == $testingInstance || "$IP" == $testingInstanceTmp ]]; then
+  echo "It's the testing instance"
+  #Change portal route
+  sudo sed -i 's/portal.muuktest.com/testing.muuktest.com/g' /home/ubuntu/projects/executor/mkcli.py
+elif [[ "$IP" == $stagingInstance ]]; then
+  echo "It's the staging instance"
+  #Change portal route
+  sudo sed -i 's/portal.muuktest.com/staging.muuktest.com/g' /home/ubuntu/projects/executor/mkcli.py
+fi
+
+#Setting the cloud key
+#The cloud key it's located in a external env.json file
+if [[ -f "/home/ubuntu/env.json" ]]; then
+  cloudKey=$(cat /home/ubuntu/env.json  | jq -r '.cloudKey')
+  sudo sed -i '$ a def getCloudKey():' /home/ubuntu/projects/executor/mkcloud.py
+  sudo sed -i "$ a  \ \ return('$cloudKey')" /home/ubuntu/projects/executor/mkcloud.py
+fi

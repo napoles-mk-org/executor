@@ -8,7 +8,8 @@ import json
 import urllib
 import xml.etree.ElementTree
 from time import strftime
-from mkcloud import gatherScreenshots, resizeImages
+from mkcloud import gatherScreenshots, resizeImages, getCloudKey
+from mkvideo import Video
 #import ssl
 from domparser import createMuukReport
 
@@ -76,13 +77,24 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  # internal cloud only
+  executionNumber = args.executionnumber or None
+  scheduleExecutionNumber = args.scheduleexecutionnumber or None
+
+  if scheduleExecutionNumber is not None:
+    scheduleExecutionNumber = int(scheduleExecutionNumber)
+  else:
+    scheduleExecutionNumber = 0
+
+  origin = args.origin or None
+  originid = args.originid or None
+  ########
   dimensions = args.dimensions
   if dimensions is not None:
     checkDimensions = isinstance(dimensions[0], int) & isinstance(dimensions[1],int)
   else:
     checkDimensions = False
 
-  executionNumber = None
   #Exit code to report at circleci
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
@@ -112,7 +124,7 @@ def run(args):
   token=''
   try:
     key_file = open(path,'r')
-    key = key_file.read()
+    key = key_file.read().strip()
     r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
     #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
@@ -141,10 +153,16 @@ def run(args):
       print(dest)
       shutil.copytree(route, dest)
       shutil.copytree("build/", dest+"/build")
+      #internal cloud only
+      files =  [f for f in os.listdir(".") if f.endswith('.mp4')]
+      shutil.move(files[0], dest) if len(files) == 1 else print("Not a video to backup")
+      #########
+      
       shutil.rmtree(route, ignore_errors=True)
     os.makedirs(route)
 
-    values = {'property': field, 'value[]': valueArr, 'userId': userId}
+    #values = {'property': field, 'value[]': valueArr, 'userId': userId, 'executionnumber': executionNumber}
+    values = {'property': field, 'value[]': valueArr, 'userId': userId, 'executionnumber': executionNumber, 'origin': origin, 'originid': originid, 'scheduleExecutionNumber': scheduleExecutionNumber}
     # Add screen dimension data if it is set as an argument
     if checkDimensions == True:
       values['dimensions'] = [dimensions[0],dimensions[1]]
@@ -211,17 +229,29 @@ def run(args):
 
       if noexec == False :
         #Execute the test
+        videoNameFile = str(organizationId) + "_" + str(executionNumber) + ".mp4"
+        v = Video()
+        print("File name for video: " + videoNameFile)
         print("Executing test...")
         try:
-
+          v.checkAndStartRecording(videoNameFile)
+          #v.checkActiveSession()
+          #v.executeCmd("ps -ef | grep ffmpeg")
+          #v.executeCmd("ls -ltr | grep *.mp4")
           exitCode = subprocess.call(dirname + '/gradlew clean '+browserName, shell=True)
         except Exception as e:
           print("Error during gradlew compilation and/or execution ")
           print(e)
 
+        #v.executeCmd("ps -ef | grep ffmpeg")
+        v.checkAndStopRecording()
+        #v.executeCmd("ls -ltr | grep *.mp4")
+        del v
         testsExecuted = gatherFeedbackData(browserName)
         url = muuktestRoute+'feedback/'
-        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
+        #values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
+        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber), 'origin': origin, 'originid': originid, 'scheduleExecutionNumber': scheduleExecutionNumber}
+        
         hed = {'Authorization': 'Bearer ' + token}
 
         #CLOUD SCREENSHOTS STARTS #
@@ -230,8 +260,13 @@ def run(args):
         filesData = gatherScreenshots(browserName)
         try:
           if filesData != {}:
+            print("Upload the screenshots: ")
             requests.post(muuktestRoute + 'upload_cloud_steps_images/', headers=hed, files = filesData)
             #requests.post(muuktestRoute + 'upload_cloud_steps_images/', data={'cloudKey': cloudKey}, headers=hed, files = filesData, verify=False)
+            print("Upload the Video: ")
+            videoFile = open(videoNameFile, 'rb')
+            files = {'file': videoFile}
+            requests.post(muuktestRoute + 'upload_video/', headers=hed, files=files)
           else:
             print ("filesData empty.. cannot send screenshots")
         except Exception as e:
@@ -279,6 +314,10 @@ def main():
   parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
   parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
   parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
+  parser.add_argument("-executionnumber",help="(Optional) this numbers contain the executionnumber from the cloud execution", type=str, dest="executionnumber")
+  parser.add_argument("-origin",help="Test origin, this is cloud only", type=str, dest="origin")
+  parser.add_argument("-originid",help="Test origin id (scheduling)", type=str, dest="originid")
+  parser.add_argument("-scheduleexecutionnumber",help="(Optional) this numbers contain the executionnumber (scheduling)", type=str, dest="scheduleexecutionnumber")
   parser.set_defaults(func=run)
   args=parser.parse_args()
   args.func(args)

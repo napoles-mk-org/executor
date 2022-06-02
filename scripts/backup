@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ -d "/home/ubuntu/projects/executor" ]; then
+  # Control will enter here if $DIRECTORY exists.
+  mkdir -p /home/ubuntu/backup
+  cp -r /home/ubuntu/projects/executor /home/ubuntu/backup/executor
+fi

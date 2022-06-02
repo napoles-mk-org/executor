@@ -1,0 +1,21 @@
+#!/bin/bash
+#Installing Pip3
+sudo apt -y install python3-pip
+#Installing BeautifulSoup4
+sudo pip3 install BeautifulSoup4
+#sudo pip3 install bs4
+#Installing xvfb
+sudo apt -y install xvfb
+#Installing firefox
+sudo apt -y install firefox
+#Installing google chrome
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt -y install ./google-chrome-stable_current_amd64.deb
+sudo apt-get install google-chrome-stable
+sudo rm google-chrome-stable_current_amd64.deb
+#Installing ffmpeg
+sudo apt -y install ffmpeg
+#Installing request
+pip3 install request
+#Installing jq to read json files
+sudo apt -y install jq

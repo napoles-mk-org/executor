@@ -1,0 +1,10 @@
+#!/bin/bash
+sudo chmod 777 /home/ubuntu/projects/executor/gradlew
+Xvfb :99 -screen 0 1366x768x16 &
+
+#Starting queue service in case it is needed
+serviceStatus=`systemctl is-active muuktest-queued.service`
+queueServiceFile=/lib/systemd/system/muuktest-queued.service
+if [[ "$serviceStatus" != 'active' ]] && [ -f "$queueServiceFile" ]; then
+  sudo systemctl start muuktest-queued.service
+fi

@@ -1,0 +1,7 @@
+#!/bin/bash
+#Stoping queue service in case it is needed
+serviceStatus=`systemctl is-active muuktest-queued.service`
+if [[ "$serviceStatus" == 'active' ]]; then
+  echo "muuktest-queued.service is running" 
+  sudo systemctl stop muuktest-queued.service
+fi
