@@ -174,8 +174,8 @@ def parseImageSelector(selector, htmlElements, searchInfo, expectedIndex, tag):
    numberElementsFoundWithValue = 0
    expectedValue = searchInfo["value"]
 
-   for selector in htmlElements:
-      if(selector['src'] == expectedValue ):
+   for selectorImg in htmlElements:
+      if(selectorImg['src'] == expectedValue ):
          numberElementsFoundWithValue += 1
          indexesFound.append(index)
       index+=1   
