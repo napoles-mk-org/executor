@@ -50,8 +50,17 @@ def createMuukReport(classname, browserName):
             element["feedback"] = []
             selectors =  json.loads(element.get("selectors").replace('\$', '\\\$'))
             selectorToUse = element.get("selectorToUse")
-            valueInfo = json.loads(element.get("value"))
-            attributes = json.loads(element.get("attributes"))
+            
+            try: 
+               valueInfo = json.loads(element.get("value"))
+            except Exception as ex:
+               valueInfo = {"value":"","":"href","":""}
+
+            try: 
+               attributes = json.loads(element.get("attributes"))
+            except Exception as ex:
+               attributes = {"id":"false","name":"undef","text":"","type":"undef"}
+
             attributes['value'] = valueInfo['value']
 
             for i in SELECTORS_ARRAY:
@@ -88,7 +97,13 @@ def createMuukReport(classname, browserName):
                                                 browserName,
                                                 attributes,
                                                 SELECTORS_ARRAY[i])                               
-               logging.info("Object  = " + json.dumps(domInfo,sort_keys=True, indent=4))
+               
+
+               try:
+                  logging.info("Object  = " + json.dumps(domInfo,sort_keys=True, indent=4))
+               except Exception as ex: 
+                  logging.error("Invalid domInfo generated") 
+
                if(domInfo):                                
                   element["feedback"].append(domInfo)
             steps.append(element)  
