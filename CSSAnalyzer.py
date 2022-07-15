@@ -175,7 +175,9 @@ def parseImageSelector(selector, htmlElements, searchInfo, expectedIndex, tag):
    expectedValue = searchInfo["value"]
 
    for selectorImg in htmlElements:
-      if(selectorImg['src'] == expectedValue ):
+      # The element source sometimes comes with a relative path, so it starts with '../'.
+      # This is to remove the dots and compare against the end of expected value. 
+      if(selectorImg['src'] == expectedValue or expectedValue.endswith(selectorImg['src'][2:None])):
          numberElementsFoundWithValue += 1
          indexesFound.append(index)
       index+=1   

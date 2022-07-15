@@ -51,8 +51,8 @@ def gatherFeedbackData(browserName):
           "failureMessage":  failureMessage,
           "muukReport":  {},
         }
-        if testSuccess == False :
-         testResult["muukReport"] = createMuukReport(testResult.get("className"), browserName)
+        # get and attach the report insights found during script execution
+        testResult["muukReport"] = createMuukReport(testResult.get("className"), browserName)
         
         feedbackData.append(testResult)
   else:
