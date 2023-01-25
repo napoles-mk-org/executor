@@ -301,10 +301,11 @@ def run(args):
 def getBrowserName(browser):
   switcher = {
     "chrome":"chromeTest",
-    "firefox": "firefoxTest"
+    "firefox": "firefoxTest",
+    "browserstack": "browserstack"
   }
   #select a browser from the list or return firefox as default
-  return switcher.get(browser,"firefoxTest")
+  return switcher.get("browserstack")
 
 
 def main():
