@@ -81,6 +81,19 @@ def run(args):
   #muuktestRoute = 'https://localhost:8081/'
   #supportRoute = 'https://localhost:8082/'
 
+  # internal cloud only
+  executionNumber = args.executionnumber or None
+  scheduleExecutionNumber = args.scheduleexecutionnumber or None
+
+  if scheduleExecutionNumber is not None:
+    scheduleExecutionNumber = int(scheduleExecutionNumber)
+  else:
+    scheduleExecutionNumber = 0
+
+  origin = args.origin or None
+  originid = args.originid or None
+  ########
+
 
 
   dirname = os.path.dirname(__file__)
@@ -218,7 +231,7 @@ def run(args):
         del v
         testsExecuted = gatherFeedbackData(browserName)
         url = muuktestRoute+'feedback/'
-        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
+        values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber), 'origin': origin, 'originid': originid, 'scheduleExecutionNumber': scheduleExecutionNumber}
         hed = {'Authorization': 'Bearer ' + token}
 
         #CLOUD SCREENSHOTS STARTS #
@@ -281,6 +294,10 @@ def main():
   parser.add_argument("-noexec",help="(Optional). If set then only download the scripts", dest="noexec", action="store_true")
   parser.add_argument("-browser",help="(Optional). Select one of the available browsers to run the test (default firefox)", type=str, dest="browser")
   parser.add_argument("-dimensions",help="(Optional). Dimensions to execute the tests, a pair of values for width height, ex. -dimensions 1800 300", type=int, nargs=2, dest="dimensions")
+  parser.add_argument("-executionnumber",help="(Optional) this numbers contain the executionnumber from the cloud execution", type=str, dest="executionnumber")
+  parser.add_argument("-origin",help="Test origin, this is cloud only", type=str, dest="origin")
+  parser.add_argument("-originid",help="Test origin id (scheduling)", type=str, dest="originid")
+  parser.add_argument("-scheduleexecutionnumber",help="(Optional) this numbers contain the executionnumber (scheduling)", type=str, dest="scheduleexecutionnumber")
   parser.set_defaults(func=run)
   args=parser.parse_args()
   args.func(args)
