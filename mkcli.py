@@ -8,7 +8,7 @@ import json
 import urllib
 import xml.etree.ElementTree
 from time import strftime
-from mkcloud import gatherScreenshots, resizeImages, getCloudKey
+from mkcloud import gatherScreenshots, resizeImages
 from mkvideo import Video
 #import ssl
 from domparser import createMuukReport
