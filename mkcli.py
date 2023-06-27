@@ -63,13 +63,24 @@ def run(args):
   noexec = args.noexec
   route = 'src/test/groovy'
   browser = args.browser
+  # internal cloud only
+  executionNumber = args.executionnumber or None
+  scheduleExecutionNumber = args.scheduleexecutionnumber or None
+
+  if scheduleExecutionNumber is not None:
+    scheduleExecutionNumber = int(scheduleExecutionNumber)
+  else:
+    scheduleExecutionNumber = 0
+
+  origin = args.origin or None
+  originid = args.originid or None
+  ########
   dimensions = args.dimensions
   if dimensions is not None:
     checkDimensions = isinstance(dimensions[0], int) & isinstance(dimensions[1],int)
   else:
     checkDimensions = False
 
-  executionNumber = None
   #Exit code to report at circleci
   exitCode = 1
   #Check if we received a browser and get the string for the gradlew task command
@@ -112,7 +123,7 @@ def run(args):
   token=''
   try:
     key_file = open(path,'r')
-    key = key_file.read()
+    key = key_file.read().strip()
     r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key})
     #r = requests.post(muuktestRoute+"generate_token_executer", data={'key': key}, verify=False)
     responseObject = json.loads(r.content)
@@ -144,7 +155,8 @@ def run(args):
       shutil.rmtree(route, ignore_errors=True)
     os.makedirs(route)
 
-    values = {'property': field, 'value[]': valueArr, 'userId': userId}
+    #values = {'property': field, 'value[]': valueArr, 'userId': userId, 'executionnumber': executionNumber}
+    values = {'property': field, 'value[]': valueArr, 'userId': userId, 'executionnumber': executionNumber, 'origin': origin, 'originid': originid, 'scheduleExecutionNumber': scheduleExecutionNumber}
     # Add screen dimension data if it is set as an argument
     if checkDimensions == True:
       values['dimensions'] = [dimensions[0],dimensions[1]]
@@ -231,6 +243,7 @@ def run(args):
         del v
         testsExecuted = gatherFeedbackData(browserName)
         url = muuktestRoute+'feedback/'
+        #values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber)}
         values = {'tests': testsExecuted, 'userId': userId, 'browser': browserName,'executionNumber': int(executionNumber), 'origin': origin, 'originid': originid, 'scheduleExecutionNumber': scheduleExecutionNumber}
         hed = {'Authorization': 'Bearer ' + token}
 
