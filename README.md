@@ -17,4 +17,4 @@ How to use
 - Watch the magic happen
 
 
-TEST CICD AWS code build
+TEST CICD AWS code build test2
