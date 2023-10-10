@@ -76,6 +76,7 @@ def run(args):
   value = args.value
   noexec = args.noexec
   route = 'src/test/groovy'
+  # hardcoding to browserstack
   browser = 'browserstack'
   # internal cloud only
   executionNumber = args.executionnumber or None
