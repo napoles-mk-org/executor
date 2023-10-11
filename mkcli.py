@@ -306,7 +306,7 @@ def getBrowserName(browser):
     "browserstack": "browserstackTest"
   }
   #select a browser from the list or return firefox as default
-  return switcher.get(browser,"firefox")
+  return switcher.get(browser,"firefoxTest")
 
 
 def main():
