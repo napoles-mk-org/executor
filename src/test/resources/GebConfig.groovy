@@ -49,8 +49,8 @@ environments {
 
   // run via “./gradlew browserstackTest
   browserstack{
-    String USERNAME = "juanpabloramos_QPwE5a";
-    String AUTOMATE_KEY = "hHR5yaYHzrJM2L9U1sii";
+    String USERNAME = "user";
+    String AUTOMATE_KEY = "automatekey";
     String URL = "https://" + USERNAME + ":" + AUTOMATE_KEY + "@hub-cloud.browserstack.com/wd/hub";
     driver = {
       DesiredCapabilities caps = new DesiredCapabilities();
