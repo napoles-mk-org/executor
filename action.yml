@@ -19,7 +19,6 @@ runs:
           echo "MUUKTEST_KEY=${{ inputs.muuk-key }}" >> $GITHUB_ENV
           echo "TAG_PROPERTY=${{ inputs.tag-property }}" >> $GITHUB_ENV
           echo "TAG_VALUE=${{ inputs.tag-value }}" >> $GITHUB_ENV
-          mkdir -p executor
       shell: bash
       
     - name: Installing dependencies
