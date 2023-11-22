@@ -1,1 +1,69 @@
-a
+name: Integrate MuukTest E2E
+description: Execute E2E MuukTest on Github Actions.
+inputs:
+  muuk-key:
+    description: Key from your MuukTest account. Download from Portal.
+    required: true
+  tag-property:
+    description: Either you want to run a single test tag or a set of test by hashtag.
+    required: true
+  tag-value:
+    description: Value according the tag type selected. 
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Pass Inputs to Shell
+      run: |
+          echo "MUUKTEST_KEY=${{ inputs.muuk-key }}" >> $GITHUB_ENV
+          echo "TAG_PROPERTY=${{ inputs.tag-property }}" >> $GITHUB_ENV
+          echo "TAG_VALUE=${{ inputs.tag-value }}" >> $GITHUB_ENV
+          mkdir -p executor
+      shell: bash
+      
+    - name: Installing dependencies
+      run: |
+          apt-get update
+          apt-get install -y software-properties-common
+          apt-get install -y tmux
+          apt-get install -y ffmpeg
+          yes "" | add-apt-repository ppa:deadsnakes/ppa || true
+          apt-get update
+          apt install python3.7 -y
+      shell: bash
+        
+    - run: curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+      shell: bash
+      
+    - run: python3.7 get-pip.py
+      shell: bash
+       
+    - run: pip3 install requests
+      shell: bash
+      
+    - run: pip3 install Pillow
+      shell: bash
+    
+    - run: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          dpkg -i google-chrome-stable_current_amd64.deb
+      shell: bash
+          
+    - name: Execute MuukTest
+      run: |
+        Xvfb :99 -screen 0 1366x768x16 -nolisten tcp -fbdir /var/run > /dev/null 2>&1 &
+        export DISPLAY=:99
+        #export FIREFOX_VERSION=66.0.3
+        git clone https://github.com/muuklabs/executor.git
+        cd executor/
+        git checkout videoEnabled
+        ls
+        printf $muuk_key > key.pub 
+        cat key.pub
+        chmod 755 gradlew 
+        chmod 755 key.pub 
+        sed -i 's/79.0.3945.36/85.0.4183.87/g' build.gradle
+        cat build.gradle
+        python3.7 mkcli.py -p $TAG_PROPERTY -t $TAG_VALUE -browser chrome
+      shell: bash
