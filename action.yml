@@ -20,7 +20,11 @@ runs:
           echo "TAG_PROPERTY=${{ inputs.tag-property }}" >> $GITHUB_ENV
           echo "TAG_VALUE=${{ inputs.tag-value }}" >> $GITHUB_ENV
       shell: bash
-      
+
+    - name: Install Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'  
     - name: Installing dependencies
       run: |
           sudo apt-get update
@@ -28,20 +32,15 @@ runs:
           sudo apt-get install -y tmux
           sudo apt-get install -y ffmpeg
           yes "" | add-apt-repository ppa:deadsnakes/ppa || true
-          sudo apt-get update
-          sudo apt install python3.7 -y
       shell: bash
         
     - run: curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
       shell: bash
-      
-    - run: python3.7 get-pip.py
-      shell: bash
-       
-    - run: pip3 install requests
+     
+    - run: pip install requests
       shell: bash
       
-    - run: pip3 install Pillow
+    - run: pip install Pillow
       shell: bash
     
     - run: |
